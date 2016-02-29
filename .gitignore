@@ -2,6 +2,7 @@
 obj
 obj/*
 disk.img
+*~
 !.gitignore
 !README.md
 !Makefile*
