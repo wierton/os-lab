@@ -21,4 +21,6 @@ $(boot_BIN): $(BOOT_SFILE)
 	@bash $(BOOT_SRC_DIR)/check.sh $(boot_BIN)
 
 .PHONY: clean-boot
+
+clean-boot:
 	@rm -rf $(BOOT_OBJ_DIR)

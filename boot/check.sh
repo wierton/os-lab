@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ ! -r "$1" ];then
-	echo file not exist or can\'t be read
+	echo -e "file not exist or can\'t be read"
 	exit 1
 fi
 

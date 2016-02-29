@@ -1,4 +1,4 @@
-.PHNOY: run clean boot game
+.PHNOY: run clean boot game submit
 
 CC := gcc
 QEMU := qemu-system-i386
@@ -22,3 +22,6 @@ run: $(IMG)
 clean:
 	@rm $(IMG)
 	@rm -rf obj
+
+submit: clean
+	@cd .. && tar cvj $(shell pwd | grep -o '[^/]*$$') > 141242068.tar.bz2
