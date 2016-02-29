@@ -19,3 +19,6 @@ $(boot_BIN): $(BOOT_SFILE)
 	@ld -e start -Ttext 0x7c00 $(BOOT_SOBJ) $(BOOT_COBJ) -o $(BOOT_TOBJ)
 	@objcopy -I elf32-i386 -O binary -j .text $(BOOT_TOBJ) $(boot_BIN)
 	@bash $(BOOT_SRC_DIR)/check.sh $(boot_BIN)
+
+.PHONY: clean-boot
+	@rm -rf $(BOOT_OBJ_DIR)
