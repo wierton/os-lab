@@ -1,0 +1,3 @@
+define git_cmd
+	git add . -A
+endef
