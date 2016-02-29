@@ -4,21 +4,21 @@ CC := gcc
 QEMU := qemu-system-i386
 IMG := disk.img
 
-all : $(IMG)
+all: $(IMG)
 
 include game/Makefile.part
 include boot/Makefile.part
 
-boot : $(boot_BIN)
-game : $(game_BIN)
+boot: $(boot_BIN)
+#game: $(game_BIN)
 
-$(IMG) : $(boot_BIN) $(game_BIN)
-	@cat $(boot_BIN) $(game_BIN) > $(IMG)
+$(IMG): $(boot_BIN)
+	@cat $(boot_BIN) > $(IMG)
 	$(call git_cmd)
 
-run : $(IMG)
-	$(QEMU) $(IMG)
+run: $(IMG)
+	$(QEMU) -serial stdio $(IMG)
 
-clean :
+clean:
 	@rm $(IMG)
 	@rm -rf obj
