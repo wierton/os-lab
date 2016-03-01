@@ -1,155 +1,32 @@
-#define SERIAL_PORT  0x3F8
-#define BK_W 320
-#define BK_H 200
-#define BK_SIZE ((BK_WIDTH) * (BK_HEIGHT))
-#define VMEM  ((uint8_t*)0xA0000)
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
-#define NULL ((void *) 0)
-typedef int bool;
-typedef char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-#define true 1
-#define false 0
-
-static inline void out_byte(short port, uint8_t data)
-{
-	asm volatile("out %0, %1"::"a"(data), "d"(port));
-}
-
-static inline uint8_t in_byte(short port)
-{
-	uint8_t data;
-	asm volatile("in %1, %0":"=a"(data):"d"(port));
-	return data;
-}
-
-static inline uint32_t in_long(short port)
-{
-	uint32_t data;
-	asm volatile("in %1, %0":"=a"(data):"d"(port));
-	return data;
-}
-
-#define DEBUG
+#include "common.h"
 
 #ifdef DEBUG
-
-static inline void init_serial()
-{
-	out_byte(SERIAL_PORT + 1, 0x00);
-	out_byte(SERIAL_PORT + 3, 0x80);
-	out_byte(SERIAL_PORT + 0, 0x01);
-	out_byte(SERIAL_PORT + 1, 0x00);
-	out_byte(SERIAL_PORT + 3, 0x03);
-	out_byte(SERIAL_PORT + 2, 0xC7);
-	out_byte(SERIAL_PORT + 4, 0x0B);
-}
 
 static inline int serial_idle()
 {
 	return (in_byte(SERIAL_PORT + 5) & 0x20) != 0;
 }
 
-void serial_printc(char ch)
+void __attribute__((__noinline__)) serial_printc(char ch)
 {
 	while (serial_idle() != 1);
 	out_byte(SERIAL_PORT, ch);
 }
 
-static inline void prints(char *str)
+void __attribute__((noinline)) printx(uint32_t val)
 {
-//	if(str != NULL)
-		for(;*str != '\0'; str ++) serial_printc(*str);
-}
-/*
-void printd(int val)
-{
-	int i = 15;
-	bool IsNeg = false;
-	char buf[20] = {0};
-	if(val < 0)
+	int i;
+	for(i = 0; i < 8; i ++)
 	{
-		IsNeg = true;
-	}
-	do
-	{
-		int temp = val % 10;
-		temp = temp < 0 ? (-temp) : temp;
-		buf[i--] = '0' + temp;
-		val /= 10;
-	} while(val);
-	
-	if(IsNeg)
-		buf[i--] = '-';
-
-	prints(&buf[i + 1]);
-}
-*/
-
-
-void printx(uint32_t val)
-{
-	int i, pos = 0;
-	char buf[20];
-	bool IsPrefix = true;
-	for(i = 7; i >= 0; i --)
-	{
-		uint8_t temp = (val >> (4 * i)) & 0xf;
-		if(temp == 0 && IsPrefix)
-			continue;
-		IsPrefix = false;
-		if(temp < 0xa)
-			buf[pos ++] = '0' + temp;
+		uint8_t temp = (val >> (i << 2)) & 0xf;
+		if(temp < 10)
+			serial_printc(temp + '0');
 		else
-			buf[pos ++] = 'a' + temp - 0xa;
-	}
-	if(pos == 0)
-		buf[pos ++] = '0';
-	buf[pos] = 0;
-	prints((void *)buf);
-	serial_printc(' ');
-}
-
-#endif
-#ifdef DEBUG_DRAW
-
-static inline void draw_rect(int16_t x, int16_t y, uint16_t w, uint16_t h, uint8_t color)
-{
-	/*clip the area firstly to make it safe to video memory
-	 */
-	if(x >= BK_W || y >= BK_H || (x + w) < 0 || (y + h) < 0)
-		return;
-	/*caculate the intersection area of two rectangle
-	 */
-	int16_t opx = max(0, x);
-	int16_t opy = max(0, y);
-	int16_t edx = min((int)BK_W, x + w);
-	int16_t edy = min((int)BK_H, y + h);
-	int16_t nw = edx - opx;
-	int i, j;
-	uint8_t *vmem = VMEM + opx + opy * BK_W;
-	for(j = opy; j < edy; j++)
-	{
-		for(i = opx; i < edx; i++)
-		{
-			vmem[0] = color;
-			vmem ++;
-		}
-		vmem = vmem - nw + BK_W;
+			serial_printc(temp - 0xa + 'a');
 	}
 }
 
 #endif
-
-/*code above aim to test some API
- */
 
 /*端口号     读还是写    具体含义
  * 1F0H       读/写      用来传送读/写的数据(其内容是正在传输的一个字节的数据)
@@ -187,40 +64,64 @@ static inline void draw_rect(int16_t x, int16_t y, uint16_t w, uint16_t h, uint8
  *	--为33h     无须验证扇区是否准备好而直接写长扇区
  */
 
+/* section number start with 1 in CHS
+ * 63 available sectors per track
+ * 1024 cylinder per platter
+ */
+
 void wait_disk()
 {
-	//the byte read from 0x1f7 port with 01b in high two bits indicate the disk is prepared
-	while((in_byte(0x1f7) & 0x80) != 0x0);
+	//the byte read from 0x1f7 port with bits 0B01xxxxxx indicate the disk is prepared
+	while((in_byte(0x1f7) & 0xc0) != 0x40);
 }
 
-/*
-inline void read_disk(uint32_t *dst, uint32_t offset, uint32_t size)
-{
-	wait_disk();
-}
-*/
-
-void read_sect()
+void read_section(uint32_t dst, int sectnum)
 {
 	wait_disk();
 	out_byte(0x1f2, 1);
-	out_byte(0x1f3, 1);
-	out_byte(0x1f4, 1 >> 8);
-	out_byte(0x1f5, 1 >> 16);
-	out_byte(0x1f6, (1 >> 18) | 0xa0);
+	out_byte(0x1f3, sectnum & 0xff);
+	out_byte(0x1f4, sectnum >> 8);
+	out_byte(0x1f5, sectnum >> 16);
+	out_byte(0x1f6, (sectnum >> 18) | 0xa0);
 	out_byte(0x1f7, 0x20);
 	wait_disk();
-	uint32_t *dst = (uint32_t *)0x10000, *tar = dst + 512 / 4;
-	for(;dst < tar;dst++)
+	uint32_t tar = dst + 512;
+	for(;dst < tar; dst += 4)
 	{
-		*dst = in_long(0x1f0);
-		printx(*dst);
+		((uint32_t *)dst)[0] = in_long(0x1f0);
 	}
-	printx(in_byte(0x1f7));
+}
+
+void read_disk(uint32_t dst, uint32_t offset, uint32_t size)
+{
+	uint32_t ed = dst + size;
+	uint32_t off = offset / 512 + 2;
+	dst -= (offset % 512);
+	for(; dst < ed; dst += 512, off++)
+	{
+		read_section(dst, off);
+	}
 }
 
 void loader()
 {
-	read_sect();
-	while(1);
+	int i, j;
+	Elf32_Endr *elf = (Elf32_Endr *)0x9000;
+	Elf32_Phdr *ph;
+	read_disk((uint32_t)elf, 0, 0x1000);
+
+	ph = (void *)elf + elf->e_phoff;
+
+	for(i = 0; i < elf->e_phnum; i++)
+	{
+		read_disk(ph->p_paddr, ph->p_offset, ph->p_filesz);
+		/*zero the memory [paddr + filesz, paddr + memsz)*/
+		for(j = ph->p_paddr + ph->p_filesz; j < ph->p_paddr + ph->p_memsz; j++)
+		{
+			((uint8_t *)j)[0] = 0;
+		}
+		ph++;
+	}
+
+	asm volatile("push %0;ret"::"a"(elf->e_entry));
 }

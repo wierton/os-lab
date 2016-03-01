@@ -12,7 +12,7 @@ boot_BIN := obj/boot/boot
 
 BOOT_FLAGS := -c -O2 -m32 -Wall -Werror -fno-stack-protector
 
-$(boot_BIN): $(BOOT_SFILE)
+$(boot_BIN): $(BOOT_SFILE) $(BOOT_CFILE)
 	@mkdir -p $(BOOT_OBJ_DIR)
 	@$(CC) $(BOOT_CFILE) -o $(BOOT_COBJ) $(BOOT_FLAGS)
 	@$(CC) $(BOOT_SFILE) -o $(BOOT_SOBJ) $(BOOT_FLAGS)

@@ -1,0 +1,33 @@
+GAME_SRC_DIR := game/src
+GAME_INC_DIR := game/include
+GAME_OBJ_DIR := obj/game
+GAME_DAT_DIR := game/data
+
+GAME_CFILES = $(shell find $(GAME_SRC_DIR) -name "*.c")
+GAME_SFILES = $(shell find $(GAME_SRC_DIR) -name "*.S")
+game_COBJS = $(patsubst $(GAME_SRC_DIR)/%.c, $(GAME_OBJ_DIR)/%.o, $(GAME_CFILES))
+game_SOBJS = $(patsubst $(GAME_SRC_DIR)/%.S, $(GAME_OBJ_DIR)/%.o, $(GAME_SFILES))
+
+game_BIN := obj/game/game
+
+GAME_CFLAGS := -m32 -O2 -Wall -Werror -fno-stack-protector -I$(GAME_INC_DIR)
+
+$(game_BIN): $(game_COBJS) $(game_SOBJS)
+	@mkdir -p $(GAME_OBJ_DIR)
+	@ld -e main -Ttext=0x1000000 -o $(game_BIN) $(game_COBJS) $(game_SOBJS)
+	@$(call git_cmd, "compile game")
+
+$(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.c
+	@echo + $<
+	@mkdir -p $(@D)
+	@$(CC) -c $< -o $@ $(GAME_CFLAGS)
+
+$(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.S
+	@echo + $<
+	@mkdir -p $(@D)
+	@$(CC) -c $< -o $@ $(GAME_CFLAGS)
+
+.PHNOY: clean-game
+
+clean-game:
+	@rm -rf $(GAME_OBJ_DIR)
