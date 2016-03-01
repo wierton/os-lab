@@ -25,8 +25,21 @@
 start:
 	cli
 
-	#enter image mode
-	movw $0x13, %ax
+	# zero segment register
+	movw $0x0, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %ss
+
+	#enter extra video mode
+	movw $0x4f02, %ax
+	movw $0x0115, %bx
+	int $0x10
+
+	#get information of extra video mode of 0x0115
+	movw $0x2000, %di
+	movw $0x4f01, %ax
+	movw $0x0115, %cx
 	int $0x10
 
 	#open A20 address line, to access all memory
