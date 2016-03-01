@@ -1,8 +1,10 @@
+#ifndef __COMMON_H__
+#define __COMMON_H__
+
 #define SERIAL_PORT  0x3F8
-#define BK_W 320
-#define BK_H 200
+#define BK_W 800
+#define BK_H 600
 #define BK_SIZE ((BK_WIDTH) * (BK_HEIGHT))
-#define VMEM  ((uint8_t*)0xA0000)
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -66,3 +68,5 @@ static inline uint32_t in_long(short port)
 	asm volatile("in %1, %0":"=a"(data):"d"(port));
 	return data;
 }
+
+#endif
