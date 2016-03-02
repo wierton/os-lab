@@ -3,6 +3,7 @@
 void init_serial();
 void init_video();
 void init_disk();
+void init_font();
 void test_printk();
 
 int main()
@@ -12,7 +13,10 @@ int main()
 	init_video();
 
 	init_disk();
-	//test_printk();
+
+	init_font();
+
+	test_printk();
 
 	while(1);
 	return 0;

@@ -1,14 +1,13 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "lib.h"
-
 #define SERIAL_PORT  0x3F8
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 #define NULL ((void *) 0)
+typedef unsigned int size_t;
 typedef int bool;
 typedef char int8_t;
 typedef unsigned char uint8_t;
@@ -46,5 +45,7 @@ static inline uint32_t in_long(short port)
 	asm volatile("in %1, %0":"=a"(data):"d"(port));
 	return data;
 }
+
+#include "lib.h"
 
 #endif

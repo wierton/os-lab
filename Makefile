@@ -14,7 +14,6 @@ game: $(game_BIN)
 
 $(IMG): $(boot_BIN) $(game_BIN)
 	@cat $(boot_BIN) $(game_BIN) > $(IMG)
-	$(call git_cmd)
 
 run: $(IMG)
 	$(QEMU) -serial stdio $(IMG)

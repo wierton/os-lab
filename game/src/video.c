@@ -1,8 +1,6 @@
 #include "common.h"
 #include "video.h"
 
-#define BK_W 800
-#define BK_H 600
 uint32_t VMEM;
 
 void init_video()
@@ -61,28 +59,20 @@ void draw_rect(int x, int y, int w, int h, uint32_t color)
 	}
 }
 
-extern uint32_t _binary_data_bk_dat_size;
-
 void draw_surface()
 {
-	int i, j;
+	int i;
 	uint32_t *bk = (uint32_t *)(&_binary_data_bk_dat_start);
-	printk("size:%d\n", &_binary_data_bk_dat_size);
 	PBITMAPINFOHEADER bi = (PBITMAPINFOHEADER)((void *)bk + 14);
-	uint8_t * pixels = (void *)bk + 54;
-	printk("0x%x,%d,%d\n", VMEM, bi->biWidth, bi->biHeight);
-	draw_rect(0, 0, 800, 600, make_rgb(0x12, 0x45, 0x90));
-	for(j = 0; j < 600; j++)
+	uint32_t size = bi->biWidth * bi->biHeight;
+	uint8_t *vmem = (uint8_t *)VMEM;
+	uint8_t *pixels = (void *)bk + 54 + 3 * size - 3;
+	for(i = 0; i < size; i++)
 	{
-		for(i = 0; i < 800; i++)
-		{
-			uint8_t * vmem = (void *)(VMEM + 3 * i + j * 2400);
-			uint8_t * src = (void *)(pixels + 3 * i + j * 2400);
-			vmem[0] = src[0];
-			vmem[1] = src[1];
-			vmem[2] = src[2];
-		}
+		vmem[0] = pixels[0];
+		vmem[1] = pixels[1];
+		vmem[2] = pixels[2];
+		vmem += 3;
+		pixels -= 3;
 	}
-	printk("****:%d\n", ((uint32_t *)0x8000)[0]);
-	
 }

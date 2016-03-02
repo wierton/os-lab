@@ -3,4 +3,6 @@
 
 void __attribute__((__noinline__)) printk(const char *ctl, ...);
 
+size_t strlen(char *str);
+
 #endif

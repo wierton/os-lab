@@ -1,6 +1,10 @@
 #ifndef __VIDEO_H__
 #define __VIDEO_H__
 
+#define BK_W 800
+#define BK_H 600
+
+extern uint32_t VMEM;
 extern uint32_t _binary_data_bk_dat_start; //the dat
 
 struct ModeInfoBlock {
