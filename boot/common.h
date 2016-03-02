@@ -50,7 +50,7 @@ typedef struct {
 	uint32_t p_align;
 } Elf32_Phdr;
 
-static inline void out_byte(short port, uint8_t data)
+static inline void out_byte(short port, char data)
 {
 	asm volatile("out %0, %1"::"a"(data), "d"(port));
 }

@@ -19,7 +19,16 @@ typedef unsigned int uint32_t;
 #define true 1
 #define false 0
 
+typedef unsigned short WORD;
+typedef long LONG;
+typedef unsigned int DWORD;
+
 static inline void out_byte(short port, uint8_t data)
+{
+	asm volatile("out %0, %1"::"a"(data), "d"(port));
+}
+
+static inline void out_word(short port, uint16_t data)
 {
 	asm volatile("out %0, %1"::"a"(data), "d"(port));
 }

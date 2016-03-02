@@ -1,6 +1,8 @@
 #ifndef __VIDEO_H__
 #define __VIDEO_H__
 
+extern uint32_t _binary_data_bk_dat_start; //the dat
+
 struct ModeInfoBlock {
 	uint16_t attributes;
 	uint8_t winA,winB;
@@ -27,6 +29,34 @@ struct ModeInfoBlock {
 	uint16_t reserved2;
 	} __attribute__((packed));
 
+typedef struct tagBITMAPFILEHEADER {
+	WORD  bfType;
+	DWORD bfSize;
+	WORD  bfReserved1;
+	WORD  bfReserved2;
+	DWORD bfOffBits;
+} BITMAPFILEHEADER, *PBITMAPFILEHEADER;
+
+typedef struct tagBITMAPINFOHEADER {
+	DWORD biSize;
+	LONG  biWidth;
+	LONG  biHeight;
+	WORD  biPlanes;
+	WORD  biBitCount;
+	DWORD biCompression;
+	DWORD biSizeImage;
+	LONG  biXPelsPerMeter;
+	LONG  biYPelsPerMeter;
+	DWORD biClrUsed;
+	DWORD biClrImportant;
+} BITMAPINFOHEADER, *PBITMAPINFOHEADER;
+
+
+typedef struct SDL_Surface {
+	int w, h;
+	void *pixels;
+} SDL_Surface;
+
 uint8_t get_r(uint32_t color);
 uint8_t get_g(uint32_t color);
 uint8_t get_b(uint32_t color);
@@ -34,5 +64,7 @@ uint8_t get_b(uint32_t color);
 uint32_t make_rgb(uint8_t r, uint8_t g, uint8_t b);
 
 void draw_rect(int x, int y, int w, int h, uint32_t color);
+
+void draw_surface();
 
 #endif

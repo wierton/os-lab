@@ -51,6 +51,20 @@ void printd(int val)
 	prints(&buf[i + 1]);
 }
 
+void printb(uint8_t val)
+{
+	int op = (val >> 4) & 0xf, ed = val & 0xf;
+	if(op < 0xa)
+		serial_printc(op + '0');
+	else
+		serial_printc(op - 0xa + 'a');
+	
+	if(ed < 0xa)
+		serial_printc(ed + '0');
+	else
+		serial_printc(ed - 0xa + 'a');
+}
+
 void printx(uint32_t val)
 {
 	int i, pos = 0;
@@ -100,6 +114,10 @@ void __attribute__((noinline)) printk(const char *ctl, ...) {
 			case 'x':
 			case 'X':
 				printx((((uint32_t *)args)[pargs ++]));
+				break;
+			case 'b':
+			case 'B':
+				printb((((uint8_t *)args)[pargs ++]));
 				break;
 			default:
 				break;

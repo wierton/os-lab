@@ -9,7 +9,8 @@ void init_video()
 {
 	struct ModeInfoBlock *it = (struct ModeInfoBlock *)0x2000;
 	VMEM = it->physbase;
-	draw_rect(-100, -100, 800, 800, make_rgb(0x0, 0, 0xff));
+//	draw_rect(-100, -100, 800, 800, make_rgb(0x0, 0, 0xff));
+	draw_surface();
 }
 
 uint8_t get_r(uint32_t color)
@@ -60,4 +61,28 @@ void draw_rect(int x, int y, int w, int h, uint32_t color)
 	}
 }
 
+extern uint32_t _binary_data_bk_dat_size;
 
+void draw_surface()
+{
+	int i, j;
+	uint32_t *bk = (uint32_t *)(&_binary_data_bk_dat_start);
+	printk("size:%d\n", &_binary_data_bk_dat_size);
+	PBITMAPINFOHEADER bi = (PBITMAPINFOHEADER)((void *)bk + 14);
+	uint8_t * pixels = (void *)bk + 54;
+	printk("0x%x,%d,%d\n", VMEM, bi->biWidth, bi->biHeight);
+	draw_rect(0, 0, 800, 600, make_rgb(0x12, 0x45, 0x90));
+	for(j = 0; j < 600; j++)
+	{
+		for(i = 0; i < 800; i++)
+		{
+			uint8_t * vmem = (void *)(VMEM + 3 * i + j * 2400);
+			uint8_t * src = (void *)(pixels + 3 * i + j * 2400);
+			vmem[0] = src[0];
+			vmem[1] = src[1];
+			vmem[2] = src[2];
+		}
+	}
+	printk("****:%d\n", ((uint32_t *)0x8000)[0]);
+	
+}

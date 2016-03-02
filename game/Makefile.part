@@ -1,21 +1,24 @@
 GAME_SRC_DIR := game/src
 GAME_INC_DIR := game/include
 GAME_OBJ_DIR := obj/game
-GAME_DAT_DIR := game/data
+GAME_DAT_DIR := data
 
 GAME_CFILES = $(shell find $(GAME_SRC_DIR) -name "*.c")
 GAME_SFILES = $(shell find $(GAME_SRC_DIR) -name "*.S")
-game_COBJS = $(patsubst $(GAME_SRC_DIR)/%.c, $(GAME_OBJ_DIR)/%.o, $(GAME_CFILES))
-game_SOBJS = $(patsubst $(GAME_SRC_DIR)/%.S, $(GAME_OBJ_DIR)/%.o, $(GAME_SFILES))
+GAME_DAT_FILES = $(shell find $(GAME_DAT_DIR) -name "*.dat")
+
+GAME_COBJS = $(patsubst $(GAME_SRC_DIR)/%.c, $(GAME_OBJ_DIR)/%.o, $(GAME_CFILES))
+GAME_SOBJS = $(patsubst $(GAME_SRC_DIR)/%.S, $(GAME_OBJ_DIR)/%.o, $(GAME_SFILES))
+GAME_DAT_OBJS = $(patsubst $(GAME_DAT_DIR)/%.dat, $(GAME_OBJ_DIR)/%.o, $(GAME_DAT_FILES))
+
 
 game_BIN := obj/game/game
 
 GAME_CFLAGS := -m32 -O2 -Wall -Werror -fno-stack-protector -I$(GAME_INC_DIR)
 
-$(game_BIN): $(game_COBJS) $(game_SOBJS)
+$(game_BIN): $(GAME_DAT_OBJS) $(GAME_COBJS) $(GAME_SOBJS)
 	@mkdir -p $(GAME_OBJ_DIR)
-	@ld -e main -Ttext=0x1000000 -o $(game_BIN) $(game_COBJS) $(game_SOBJS)
-	@$(call git_cmd, "compile game")
+	@ld -e main -Ttext=0x1000000 -o $(game_BIN) $(GAME_COBJS) $(GAME_SOBJS) $(GAME_DAT_OBJS)
 
 $(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.c
 	@echo + $<
@@ -26,6 +29,11 @@ $(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.S
 	@echo + $<
 	@mkdir -p $(@D)
 	@$(CC) -c $< -o $@ $(GAME_CFLAGS)
+
+$(GAME_OBJ_DIR)/%.o: $(GAME_DAT_DIR)/%.dat
+	@echo + $<
+	@mkdir -p $(@D)
+	@objcopy -I binary -O elf32-i386 -B i386 $< $@
 
 .PHNOY: clean-game
 

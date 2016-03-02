@@ -2,6 +2,7 @@
 
 void init_serial();
 void init_video();
+void init_disk();
 void test_printk();
 
 int main()
@@ -10,7 +11,8 @@ int main()
 
 	init_video();
 
-	test_printk();
+	init_disk();
+	//test_printk();
 
 	while(1);
 	return 0;
