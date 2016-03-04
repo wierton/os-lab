@@ -1,6 +1,7 @@
 #include "common.h"
-#include "font.h"
-#include "video.h"
+#include "font/font.h"
+#include "font/basic-font.h"
+#include "device/video.h"
 
 #define CHAR_W 8
 #define CHAR_H 8
@@ -16,7 +17,6 @@ void draw_character(char ch, int x, int y, uint32_t color, uint8_t times)
 			uint32_t *vmem = (uint32_t *)(VMEM + tar);
 			if((font8x8_basic[(uint8_t)ch][j / times] >> (i / times)) & 0x1)
 			{
-				
 				vmem[0] = color;
 			}
 		}

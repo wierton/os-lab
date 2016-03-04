@@ -63,7 +63,8 @@ start_next:
 	movw %ax, %ss
 
 	# set stack pointer
-	movl $0x8000, %esp
+	movl $0x8000000, %esp
+	movl $0x0, %ebp
 
 	# enter c code
 	call loader

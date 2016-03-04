@@ -1,5 +1,8 @@
 #include "common.h"
 
+static char *dststr = NULL;
+typedef void (*PRINTER)(char);
+
 void init_serial()
 {
 	out_byte(SERIAL_PORT + 1, 0x00);
@@ -22,13 +25,19 @@ void serial_printc(char ch)
 	out_byte(SERIAL_PORT, ch);
 }
 
-inline void prints(char *str)
+void sprintc(char ch)
 {
-	if(str != NULL)
-		for(;*str != '\0'; str ++) serial_printc(*str);
+	if(dststr != NULL)
+		*dststr++ = ch;
 }
 
-void printd(int val)
+inline void prints(char *str, PRINTER printer)
+{
+	if(str != NULL)
+		for(;*str != '\0'; str ++) printer(*str);
+}
+
+void printd(int val, PRINTER printer)
 {
 	int i = 15;
 	bool IsNeg = false;
@@ -48,24 +57,10 @@ void printd(int val)
 	if(IsNeg)
 		buf[i--] = '-';
 
-	prints(&buf[i + 1]);
+	prints(&buf[i + 1], printer);
 }
 
-void printb(uint8_t val)
-{
-	int op = (val >> 4) & 0xf, ed = val & 0xf;
-	if(op < 0xa)
-		serial_printc(op + '0');
-	else
-		serial_printc(op - 0xa + 'a');
-	
-	if(ed < 0xa)
-		serial_printc(ed + '0');
-	else
-		serial_printc(ed - 0xa + 'a');
-}
-
-void printx(uint32_t val)
+void printx(uint32_t val, PRINTER printer)
 {
 	int i, pos = 0;
 	char buf[20];
@@ -84,45 +79,58 @@ void printx(uint32_t val)
 	if(pos == 0)
 		buf[pos ++] = '0';
 	buf[pos] = 0;
-	prints((void *)buf);
+	prints((void *)buf, printer);
 }
 
-void __attribute__((noinline)) printk(const char *ctl, ...) {
-	void **args = ((void **)(&ctl)) + 1;
+int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER printer) {
 	int i = 0, pargs = 0;
 	for(;ctl[i] != '\0'; i ++)
 	{
 		if(ctl[i] != '%')
 		{
-			serial_printc(ctl[i]);
+			printer(ctl[i]);
 			continue;
 		}
 		switch(ctl[++ i])
 		{
 			case 'c':
 			case 'C':
-				serial_printc((char)(((int *)args)[pargs ++]));
+				printer((char)(((int *)args)[pargs ++]));
 				break;
 			case 'd':
 			case 'D':
-				printd((((int *)args)[pargs ++]));
+				printd((((int *)args)[pargs ++]), printer);
 				break;
 			case 's':
 			case 'S':
-				prints((void *)(((int *)args)[pargs ++]));
+				prints((void *)(((int *)args)[pargs ++]), printer);
 				break;
+			case 'p':
+			case 'P':
 			case 'x':
 			case 'X':
-				printx((((uint32_t *)args)[pargs ++]));
-				break;
-			case 'b':
-			case 'B':
-				printb((((uint8_t *)args)[pargs ++]));
+				printx((((uint32_t *)args)[pargs ++]), printer);
 				break;
 			default:
 				break;
 		}
 	}
+	printer('\0');
+	return 0;
+}
+
+void printk(const char *ctl, ...)
+{
+	void **args = ((void **)(&ctl)) + 1;
+	vfprintf(ctl, args, serial_printc);
+}
+
+void sprintk(char *dst, const char *ctl, ...)
+{
+	void **args = ((void **)(&ctl)) + 1;
+	dststr = dst;
+	vfprintf(ctl, args, sprintc);
+	dststr = NULL;
 }
 
 void test_printk()

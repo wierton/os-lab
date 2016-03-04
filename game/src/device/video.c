@@ -1,5 +1,5 @@
 #include "common.h"
-#include "video.h"
+#include "device/video.h"
 
 uint32_t VMEM;
 
