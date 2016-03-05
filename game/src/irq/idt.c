@@ -76,7 +76,7 @@ void init_idt()
 	set_intr(idt + 33, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
 
 	uint16_t volatile data[3];
-	data[0] = NR_IRQ - 1;
+	data[0] = sizeof(idt) - 1;
 	data[1] = (uint32_t)idt;
 	data[2] = ((uint32_t)idt) >> 16;
 	asm volatile("lidt (%0)"::"r"(data));

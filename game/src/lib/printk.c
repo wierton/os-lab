@@ -115,7 +115,6 @@ int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER pri
 				break;
 		}
 	}
-	printer('\0');
 	return 0;
 }
 
@@ -130,6 +129,7 @@ void sprintk(char *dst, const char *ctl, ...)
 	void **args = ((void **)(&ctl)) + 1;
 	dststr = dst;
 	vfprintf(ctl, args, sprintc);
+	sprintc('\0');
 	dststr = NULL;
 }
 

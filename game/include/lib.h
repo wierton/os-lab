@@ -12,7 +12,7 @@ void abort(const char *, int);
 
 #define assert(cond) \
 	do { \
-		if(!cond) \
+		if(!(cond)) \
 		{ \
 			abort(__FILE__, __LINE__);\
 		} \
