@@ -1,24 +1,47 @@
 BOOT_SRC_DIR := boot
 BOOT_OBJ_DIR := obj/boot
 
+LOAD_OBJ_DIR := obj/load
+
 BOOT_SFILE := $(BOOT_SRC_DIR)/start.S
 BOOT_CFILE := $(BOOT_SRC_DIR)/main.c
+
+LOAD_CFILE := $(BOOT_SRC_DIR)/loader.c
+LOAD_SFILE := $(BOOT_SRC_DIR)/load-prev.S
 
 BOOT_SOBJ := $(BOOT_OBJ_DIR)/start.o
 BOOT_COBJ := $(BOOT_OBJ_DIR)/main.o
 BOOT_TOBJ := $(BOOT_OBJ_DIR)/boot.o
 
+LOAD_COBJ := $(LOAD_OBJ_DIR)/load.o
+LOAD_SOBJ := $(LOAD_OBJ_DIR)/load-prev.o
+LOAD_TOBJ := $(LOAD_OBJ_DIR)/loadt.o
+
 boot_BIN := obj/boot/boot
+BOOT_A := obj/boot/boot.a
+LOAD_A := obj/boot/load.a
 
 BOOT_FLAGS := -c -O2 -m32 -Wall -Werror -fno-stack-protector
+LOAD_FLAGS := -c -O2 -m32 -Wall -Werror -fno-stack-protector
 
-$(boot_BIN): $(BOOT_SFILE) $(BOOT_CFILE)
+$(boot_BIN): $(BOOT_A) $(LOAD_A)
+	@cat $(BOOT_A) $(LOAD_A) > $(boot_BIN)
+
+$(BOOT_A): $(BOOT_SFILE) $(BOOT_CFILE)
 	@mkdir -p $(BOOT_OBJ_DIR)
 	@$(CC) $(BOOT_CFILE) -o $(BOOT_COBJ) $(BOOT_FLAGS)
 	@$(CC) $(BOOT_SFILE) -o $(BOOT_SOBJ) $(BOOT_FLAGS)
-	@ld -e start -Ttext 0x7c00 $(BOOT_SOBJ) $(BOOT_COBJ) -o $(BOOT_TOBJ)
-	@objcopy -I elf32-i386 -O binary -j .text $(BOOT_TOBJ) $(boot_BIN)
-	@bash $(BOOT_SRC_DIR)/check.sh $(boot_BIN)
+	@ld -e boot_main -Ttext 0x7c00 $(BOOT_SOBJ) $(BOOT_COBJ) -o $(BOOT_TOBJ)
+	@objcopy -I elf32-i386 -O binary -j .text $(BOOT_TOBJ) $(BOOT_A)
+	@bash $(BOOT_SRC_DIR)/check.sh $(BOOT_A) 512
+
+$(LOAD_A): $(LOAD_CFILE)
+	@mkdir -p $(LOAD_OBJ_DIR)
+	@$(CC) $(LOAD_CFILE) -o $(LOAD_COBJ) $(LOAD_FLAGS)
+	@$(CC) $(LOAD_SFILE) -o $(LOAD_SOBJ) $(LOAD_FLAGS)
+	@ld -e loader -Ttext 0x9000 $(LOAD_SOBJ) $(LOAD_COBJ) -o $(LOAD_TOBJ)
+	@objcopy -I elf32-i386 -O binary -j .text $(LOAD_TOBJ) $(LOAD_A)
+	@bash $(BOOT_SRC_DIR)/check.sh $(LOAD_A) 4096
 
 .PHONY: clean-boot
 

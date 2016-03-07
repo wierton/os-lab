@@ -8,6 +8,7 @@
 void init_timer()
 {
 	int counter = PIT_FREQUENCE / HZ;
+	assert(counter < 65536);
 	out_byte(PORT_CMD, 0x34);
 	out_byte(PORT_CH_0, counter & 0xFF);         // access low byte
 	out_byte(PORT_CH_0, (counter >> 8) & 0xFF);  // access high byte

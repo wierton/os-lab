@@ -4,6 +4,16 @@
 void printk(const char *ctl, ...);
 void sprintk(char *dst, const char *ctl, ...);
 
+void srand(int seed);
+int rand();
+
+int abs(int x);
+
+float sin(float x);
+float cos(float x);
+float fabs(float x);
+float sqrt(float x);
+
 size_t strlen(char *str);
 
 int strcat(char *, char *);

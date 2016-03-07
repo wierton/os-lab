@@ -2,9 +2,6 @@
 #define __COMMON_H__
 
 #define SERIAL_PORT  0x3F8
-#define BK_W 800
-#define BK_H 600
-#define BK_SIZE ((BK_WIDTH) * (BK_HEIGHT))
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))

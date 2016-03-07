@@ -33,7 +33,7 @@ start:
 
 	# enter extra video mode
 	movw $0x4f02, %ax
-	movw $0x0115, %bx
+	movw $0x0112, %bx
 	int $0x10
 
 	# get information of extra video mode of 0x0115
@@ -67,7 +67,7 @@ start_next:
 	movl $0x0, %ebp
 
 	# enter c code
-	call loader
+	call boot_main
 
 .p2align 2
 gdtdesc:

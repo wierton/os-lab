@@ -7,8 +7,6 @@ void init_video()
 {
 	struct ModeInfoBlock *it = (struct ModeInfoBlock *)0x2000;
 	VMEM = it->physbase;
-//	draw_rect(-100, -100, 800, 800, make_rgb(0x0, 0, 0xff));
-	draw_surface();
 }
 
 uint8_t get_r(uint32_t color)

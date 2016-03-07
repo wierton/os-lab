@@ -25,7 +25,7 @@ run: $(IMG)
 	$(QEMU) -serial stdio $(IMG)
 
 clean:
-	@rm $(IMG)
+	@rm -f $(IMG)
 	@rm -rf obj
 
 submit: clean

@@ -23,8 +23,10 @@ void draw_character(char ch, int x, int y, uint32_t color, uint8_t times)
 
 }
 
-void draw_str(char *str, int x, int y, uint32_t color, uint8_t times)
+void draw_str(int x, int y, uint32_t color, uint8_t times, const char *ctl, ...)
 {
+	char str[50];
+	sprintk(str, ctl);
 	int i, len = strlen(str);
 	for(i = 0; i < len; i++)
 	{
@@ -34,5 +36,5 @@ void draw_str(char *str, int x, int y, uint32_t color, uint8_t times)
 
 void init_font()
 {
-	draw_str("Hello World!", 200, 270, make_rgb(0x80, 0x10, 0x50), 4);
+	draw_str(200, 270, make_rgb(0x80, 0x10, 0x50), 4, "Hello World!");
 }

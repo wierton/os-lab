@@ -73,7 +73,7 @@ void init_idt()
 	set_trap(idt + 13, (uint32_t)vec13, SEG_KERNEL_CODE, DPL_KERNEL);
 	
 	set_intr(idt + 32, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
-	set_intr(idt + 33, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_intr(idt + 33, (uint32_t)irq1, SEG_KERNEL_CODE, DPL_KERNEL);
 
 	uint16_t volatile data[3];
 	data[0] = sizeof(idt) - 1;
