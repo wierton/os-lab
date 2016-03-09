@@ -21,9 +21,16 @@ static SURFACE surface[NR_SURFACE];
 static uint8_t pool[POOL_SIZE];
 
 static SURFACE * canvas;
-
+//#define GAME_ACC
 void flip(SURFACE *src)
 {
+#ifdef GAME_ACC
+	asm volatile("cld;\
+			movl %0, %ecx;\
+			movl %1, %eax\
+			movl %2, %edi;\
+			rep movsl %ds:(%esi), %es:(%edi)"::"i"(SCR_BITSIZE), "a"(src->pixels), "i"(VMEM));
+#else
 	int i;
 	uint8_t *vmem = (uint8_t *)VMEM;
 	uint8_t *pixels = src->pixels;
@@ -37,6 +44,7 @@ void flip(SURFACE *src)
 		vmem += 3;
 		pixels += 3;
 	}
+#endif
 }
 
 SURFACE * load_bmp(int ID)
@@ -83,45 +91,69 @@ void blit_surface(SURFACE *src, RECT *srcrect, SURFACE *dst, RECT *dstrect)
 	/* clip the area firstly
 	 * */
 	assert(dst && src);
+	int i, j, sx = 0, sy = 0, dx = 0, dy = 0, w = src->w, h = src->h;
+	if(srcrect != NULL)
+	{
+		sx = srcrect->x;
+		sy = srcrect->y;
+		w = srcrect->w;
+		h = srcrect->h;
+	}
+	if(dstrect != NULL)
+	{
+		dx = dstrect->x;
+		dy = dstrect->y;
+		if(dx > dst->w || dx + w < 0 || dy > dst->h || dy + h < 0)
+			return;
+	}
 
-	int SrcX, SrcY, CopyWidth, CopyHeight, DstX, DstY;
-	if(srcrect == NULL || dstrect == NULL)
-	{
-		SrcX = SrcY = DstX = DstY = 0;
-		CopyWidth = src->w < dst->w ? src->w : dst->w;
-		CopyHeight = src->h < dst->h ? src->h : dst->h;
-	}
-	else
-	{
-		int SrcCopyWidth = src->w - srcrect->x;
-		int SrcCopyHeight = src->h - srcrect->y;
-		int DstCopyWidth = dst->w - dstrect->x;
-		int DstCopyHeight = dst->h - dstrect->y;
-		int MinSDWidth = SrcCopyWidth < DstCopyWidth ? SrcCopyWidth : DstCopyWidth;
-		int MinSDHeight = SrcCopyHeight < DstCopyHeight ? SrcCopyHeight : DstCopyHeight;
-		SrcX = srcrect -> x;
-		SrcY = srcrect -> y;
-		DstX = dstrect -> x;
-		DstY = dstrect -> y;
-		CopyWidth = srcrect->w < MinSDWidth ? srcrect->w : MinSDWidth;
-		CopyHeight = srcrect->h < MinSDHeight ? srcrect->h : MinSDHeight;
-	}
+	int ddx = max(0, dx);
+	int ddy = max(0, dy);
+	w = min(dx + w, dst->w) - ddx;
+	h = min(dy + h, dst->h) - ddy;
+	sx += ddx - dx;
+	dx = ddx;
+	sy += ddy - dy;
+	dy = ddy;
+
+//	if(w < 0 || h < 0 || sx > src->w || sy > src->h) return;
+
+	int dsx = max(0, sx);
+	int dsy = max(0, sy);
+	w = min(sx + w, src->w) - dsx;
+	h = min(sy + h, src->h) - dsy;
+	dx += dsx - sx;
+	sx = dsx;
+	dy += dsy - sy;
+	sy = dsy;
 	
-	int i,j;
-	uint8_t * SrcPos = src->pixels + 3 * SrcX + src->bpl * (0 + SrcY);
-	uint8_t * DstPos = dst->pixels + 3 * DstX + dst->bpl * (0 + DstY);
-	for(j = 0; j < CopyHeight; j++)
-	{
-		for(i = 0; i < CopyWidth; i++)
+//	if(w < 0 || h < 0 || dx > dst->w || dy > dst->h) return;
+//	printk("[%d, %d, %d, %d, %d, %d] ", sx, sy, dx, dy, w, h);
+
+	int nw = 3 * w;
+	uint8_t *sp = src->pixels + 3 * sx + sy * src->bpl;
+	uint8_t *dp = dst->pixels + 3 * dx + dy * dst->bpl;
+	for(j = 0; j < h; j ++)
+	{		
+		for(i = 0; i < w; i ++)
 		{
-			DstPos[0] = SrcPos[0];
-			DstPos[1] = SrcPos[1];
-			DstPos[2] = SrcPos[2];
-			SrcPos += 3;
-			DstPos += 3;
+			if((((uint32_t *)sp)[0] | 0xff000000) != src->keycolor)
+			{
+				dp[0] = sp[0];
+				dp[1] = sp[1];
+				dp[2] = sp[2];
+			}
+			assert((void*)dp < (dst->pixels + dst->bpl * dst->h));
+/*			if((void*)dp < (dst->pixels))
+			{
+				printk("[%d, %d, %d, %d, %d, %d, %d, %d, %d, %d] ", sx, sy, dx, dy, w, h, ddx, ddy, dsx, dsy);
+			}
+*/			assert((void*)dp >= (dst->pixels));
+			sp += 3;
+			dp += 3;
 		}
-		SrcPos = SrcPos - 3 * CopyWidth + src->bpl;
-		DstPos = DstPos - 3 * CopyWidth + dst->bpl;
+		sp = sp - nw + src->bpl;
+		dp = dp - nw + dst->bpl;
 	}
 }
 

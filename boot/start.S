@@ -39,7 +39,7 @@ start:
 	# get information of extra video mode of 0x0115
 	movw $0x2000, %di
 	movw $0x4f01, %ax
-	movw $0x0115, %cx
+	movw $0x0112, %cx
 	int $0x10
 
 	# open A20 address line, to access all memory

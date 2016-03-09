@@ -45,13 +45,13 @@ void game_main()
 		handle[i] = alloc_bullet(35);
 		set_bullet(handle[i], &ibs);
 	}
-/*
+
 	PLANE_HELPER plane_helper = {make_point(100, 80), 1, 0, 0};
 
 	i = 0;
-*/	while(game_state != GAME_END)
+	while(game_state != GAME_END)
 	{
-/*		i++;
+		i++;
 		judge_collision();
 		if(i % 100 == 0)
 		{
@@ -64,16 +64,16 @@ void game_main()
 		{
 			rand_drop_xbullets();
 		}
-*/
+
 		msgloop();
 		update_screen();
-/*
+
 		move_plane();
 		show_plane();
 
 		move_drop_xbullets();
 		collision_drop_xbullets();
-*/
+
 		show_player();
 
 		show_bomb();
