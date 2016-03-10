@@ -21,10 +21,10 @@ static uint32_t s_pb = 0;
 /* define some kinds of bullets */
 static IBS ibs_player[] = {
 	{ID_DOT, ID_PLAYER, IDBF_SPEEDLINE, 3 * PI / 2, 3 * PI / 2 + 0.1, 1},
-	{ID_DOT, ID_PLAYER, IDBF_SQUARE, PI + 0.1, 2 * PI, 1},
+	{ID_DOT, ID_PLAYER, IDBF_SQUARE, PI + 0.2, 2 * PI, 1},
 	{ID_DOT, ID_PLAYER, IDBF_OUTRIGHTSQUARE, PI, 3 * PI / 2, 1},
 	{ID_DOT, ID_PLAYER, IDBF_OUTLEFTSQUARE, PI / 2, PI, 1},
-	{ID_DOT, ID_PLAYER, IDBF_SPEEDLINE, 4 * PI / 3 + 0.25, 5 * PI / 3, 1}
+	{ID_DOT, ID_PLAYER, IDBF_SPEEDLINE, 7 * PI / 6 + 0.25, 11 * PI / 6, 1}
 };
 
 #define NR_IBS_PLAYER (sizeof(ibs_player)/sizeof(ibs_player[0]))
@@ -104,7 +104,7 @@ void shot_player()
 			{
 				sub_xbullets('x', 1);
 				taridr = query_empty_handle();
-				player_bullets[taridr] = alloc_bullet(32);
+				player_bullets[taridr] = alloc_bullet(16);
 				player_bullets_pos[taridr] = make_point(px, py);
 				set_bullet(player_bullets[taridr], &ibs_player[1]);
 			}
@@ -132,9 +132,9 @@ void shot_player()
 		case KEY_s:
 			if(query_xbullets('s') > 0)
 			{
-				sub_xbullets('s', 1);
+				//sub_xbullets('s', 1);
 				taridr = query_empty_handle();
-				player_bullets[taridr] = alloc_bullet(3);
+				player_bullets[taridr] = alloc_bullet(6);
 				player_bullets_pos[taridr] = make_point(px, py);
 				set_bullet(player_bullets[taridr], &ibs_player[4]);
 			}

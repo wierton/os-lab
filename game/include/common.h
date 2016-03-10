@@ -1,6 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#define VIRTUAL
 #define SERIAL_PORT  0x3F8
 
 #define max(a, b) ((a) > (b) ? (a) : (b))

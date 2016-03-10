@@ -5,6 +5,7 @@ typedef void (*PRINTER)(char);
 
 void init_serial()
 {
+#ifdef VIRTUAL
 	out_byte(SERIAL_PORT + 1, 0x00);
 	out_byte(SERIAL_PORT + 3, 0x80);
 	out_byte(SERIAL_PORT + 0, 0x01);
@@ -12,6 +13,7 @@ void init_serial()
 	out_byte(SERIAL_PORT + 3, 0x03);
 	out_byte(SERIAL_PORT + 2, 0xC7);
 	out_byte(SERIAL_PORT + 4, 0x0B);
+#endif
 }
 
 static inline int serial_idle()
@@ -21,8 +23,10 @@ static inline int serial_idle()
 
 void serial_printc(char ch)
 {
+#ifdef VIRTUAL
 	while (serial_idle() != 1);
 	out_byte(SERIAL_PORT, ch);
+#endif
 }
 
 void sprintc(char ch)
@@ -127,6 +131,14 @@ void printk(const char *ctl, ...)
 void sprintk(char *dst, const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
+	dststr = dst;
+	vfprintf(ctl, args, sprintc);
+	sprintc('\0');
+	dststr = NULL;
+}
+
+void vsprintk(char *dst, const char *ctl, void **args)
+{
 	dststr = dst;
 	vfprintf(ctl, args, sprintc);
 	sprintc('\0');

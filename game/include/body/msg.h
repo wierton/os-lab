@@ -11,11 +11,14 @@ typedef uint32_t OSKEY;
 #define KEY_x 0x2d
 #define KEY_r 0x13
 #define KEY_l 0x26
-#define KEY_s 0x2e
-#define KEY_UP 0x11
-#define KEY_DOWN 0x1f
-#define KEY_LEFT 0x1e
-#define KEY_RIGHT 0x20
+#define KEY_w 0x11
+#define KEY_s 0x1f
+#define KEY_a 0x1e
+#define KEY_d 0x20
+#define KEY_UP 0xe048
+#define KEY_DOWN 0xe050
+#define KEY_LEFT 0xe04b
+#define KEY_RIGHT 0xe04d
 
 typedef enum tagPALDIRECTION {
     kdirUp = 0,
@@ -30,7 +33,7 @@ typedef struct tagINPUTSTATE {
     OSKEY dwKey;
 } INPUTSTATE;
 
-#define KEY_Unknown 0
+#define KEY_UNKNOWN 0
 
 extern INPUTSTATE g_InputState;
 

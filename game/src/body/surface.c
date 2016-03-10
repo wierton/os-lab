@@ -6,6 +6,7 @@ extern uint8_t font8x8_basic[128][8];
 extern uint32_t _binary_data_bk_dat_start;
 extern uint32_t _binary_data_it_dat_start;
 
+#define GAME_ACC_FLIP
 #define CHAR_W 8
 #define CHAR_H 8
 #define SCR_W 640
@@ -21,15 +22,15 @@ static SURFACE surface[NR_SURFACE];
 static uint8_t pool[POOL_SIZE];
 
 static SURFACE * canvas;
-//#define GAME_ACC
+
 void flip(SURFACE *src)
 {
-#ifdef GAME_ACC
-	asm volatile("cld;\
-			movl %0, %ecx;\
-			movl %1, %eax\
-			movl %2, %edi;\
-			rep movsl %ds:(%esi), %es:(%edi)"::"i"(SCR_BITSIZE), "a"(src->pixels), "i"(VMEM));
+#ifdef GAME_ACC_FLIP
+	uint32_t volatile pixels = (uint32_t)src->pixels;
+	asm volatile("movl %0, %%ecx"::"i"(SCR_BITSIZE));
+	asm volatile("movl %0, %%esi"::"m"(pixels));
+	asm volatile("movl %0, %%edi"::"m"(VMEM));
+	asm volatile("rep movsb");
 #else
 	int i;
 	uint8_t *vmem = (uint8_t *)VMEM;
@@ -91,7 +92,7 @@ void blit_surface(SURFACE *src, RECT *srcrect, SURFACE *dst, RECT *dstrect)
 	/* clip the area firstly
 	 * */
 	assert(dst && src);
-	int i, j, sx = 0, sy = 0, dx = 0, dy = 0, w = src->w, h = src->h;
+	int j, sx = 0, sy = 0, dx = 0, dy = 0, w = src->w, h = src->h;
 	if(srcrect != NULL)
 	{
 		sx = srcrect->x;
@@ -135,6 +136,15 @@ void blit_surface(SURFACE *src, RECT *srcrect, SURFACE *dst, RECT *dstrect)
 	uint8_t *dp = dst->pixels + 3 * dx + dy * dst->bpl;
 	for(j = 0; j < h; j ++)
 	{		
+#ifdef GAME_ACC
+		asm volatile("movl %0, %%ecx"::"m"(nw));
+		asm volatile("movl %0, %%esi"::"m"(sp));
+		asm volatile("movl %0, %%edi"::"m"(dp));
+		asm volatile("rep movsb");
+		sp += src->bpl;
+		dp += dst->bpl;
+#else
+		int i;
 		for(i = 0; i < w; i ++)
 		{
 			if((((uint32_t *)sp)[0] | 0xff000000) != src->keycolor)
@@ -154,6 +164,7 @@ void blit_surface(SURFACE *src, RECT *srcrect, SURFACE *dst, RECT *dstrect)
 		}
 		sp = sp - nw + src->bpl;
 		dp = dp - nw + dst->bpl;
+#endif
 	}
 }
 
@@ -216,8 +227,8 @@ void font_sin(char ch, int x, int y, uint32_t color, uint8_t times)
 
 void font_out(int x, int y, uint32_t color, uint8_t times, const char *ctl, ...)
 {
-	char str[50];
-	sprintk(str, ctl);
+	char str[100];
+	vsprintk(str, ctl, ((void **)&ctl) + 1);
 	int i, len = strlen(str);
 	for(i = 0; i < len; i++)
 	{

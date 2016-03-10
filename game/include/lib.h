@@ -3,6 +3,7 @@
 
 void printk(const char *ctl, ...);
 void sprintk(char *dst, const char *ctl, ...);
+void vsprintk(char *dst, const char *ctl, void **args);
 
 void srand(int seed);
 int rand();

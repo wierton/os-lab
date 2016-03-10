@@ -11,9 +11,9 @@ struct RES_IDC {
     RECT rect;
 } res_idc[] =
 	{
-		{ID_PLAYER, {400}, {0, 0, 29, 33}},
+		{ID_PLAYER, {50}, {0, 0, 29, 33}},
 		{ID_ENEMY, {100}, {0, 33, 62, 50}},
-		{ID_DOT, {10}, {29, 13, 6, 6}},
+		{ID_DOT, {6}, {29, 13, 6, 6}},
 		{ID_BLOOD, {0}, {0, 0, BLOOD_W, BLOOD_H}},
 		{ID_SMALLBOMB_0, {0}, {32 * 0, 83, 32, 32}},
 		{ID_SMALLBOMB_1, {0}, {32 * 1, 83, 32, 32}},
@@ -112,10 +112,9 @@ bool is_offscreen(uint32_t itemID, POINT pos)
 bool query_item_collision(uint32_t itemID, int i, int j)
 {
 	assert(i >= 0 && i < item[itemID]->w && j>= 0 && j < item[itemID]->h);
-	uint8_t * pixels = (uint8_t *)(item[itemID]->pixels);
-	return (pixels[3 * i + j] != 0xff
-		&&  pixels[3 * i + j + 1] != 0x0
-		&&  pixels[3 * i + j + 2] != 0xff);
+	uint8_t * pixels = (void *)(item[itemID]->pixels);
+	uint32_t * pos = (void *)pixels + 3 * i + j * item[itemID]->bpl;
+	return ((pos[0] | 0xff000000) != 0xffff00ff);
 }
 
 uint32_t query_life_atk(uint32_t itemID)

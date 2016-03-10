@@ -25,6 +25,7 @@ void show_player();
 void resume_player();
 void draw_toolbar();
 void delay(uint32_t ms);
+int read_menu();
 
 extern SURFACE *screen;
 
@@ -42,25 +43,25 @@ void game_main()
 	
 	for(i = 0; i < NR_COUNT; i++)
 	{
-		handle[i] = alloc_bullet(35);
+		handle[i] = alloc_bullet(13);
 		set_bullet(handle[i], &ibs);
 	}
 
 	PLANE_HELPER plane_helper = {make_point(100, 80), 1, 0, 0};
 
-	i = 0;
+	i = 0x3e;
 	while(game_state != GAME_END)
 	{
 		i++;
 		judge_collision();
-		if(i % 100 == 0)
+		if((i & 0x3f) == 0)
 		{
 			LPPLANE newplane = alloc_plane();
 			plane_helper.pos.x = rand() % (BK_W - 100) + 50;
 			plane_helper.pos.y = 1;
 			set_plane(newplane, ID_ENEMY, IDPF_LINE, &plane_helper, 3, &ibs);
 		}
-		if(i % 2048 == 0)
+		if((i & 0x3ff) == 0)
 		{
 			rand_drop_xbullets();
 		}
@@ -77,9 +78,9 @@ void game_main()
 		show_player();
 
 		show_bomb();
-/*
+
 		draw_toolbar();
-*/
+
 		flip(screen);
 //		delay(1);
 	}
@@ -99,86 +100,27 @@ void game_main()
 
 void game_plot()
 {
-	//TODO:processing game by plot in plot.cpp
+	//TODO:processing game by random in random.c
 }
 
 void game_start()
 {
 	resume_player();
 	game_state = GAME_START;
-	const uint32_t times = 3;
-
-	int redraw = 1, sel = 0x0, count = 0;
-	uint32_t color[] = {0x3f, 0x3f3f};
-	uint32_t sel_color = 0x0;
 
 	while(true)
 	{
-		if(redraw)
-		{
-			redraw = 0;
-			update_screen();
-			font_out((BK_W - 9 * times * 8) / 2, (BK_H - 2 * times * 8) / 2,
-				0x3f, times, "plot mode");
-			font_out((BK_W - 11 * times * 8) / 2, (BK_H + 2 * times * 8) / 2,
-				0x3f, times, "random mode");
+		int sel = read_menu();
 
+		if(sel & 0x1)
+		{
+			game_plot();
+		}
+		else
+		{
+			game_main();
 		}
 
-
-		msgloop();
-		switch(g_InputState.dir)
-		{
-			case kdirUp:
-			case kdirLeft:
-			case kdirDown:
-			case kdirRight:
-				sel ^= 0x1;
-				if(sel & 0x1)
-				{
-					font_out((BK_W - 9 * times * 8) / 2, (BK_H - 2 * times * 8) / 2, color[0], times, "plot mode");
-				}
-				else
-				{
-					font_out((BK_W - 11 * times * 8) / 2, (BK_H + 2 * times * 8) / 2, color[0], times, "random mode");
-				}
-				break;
-			default:break;
-		}
-
-		switch(sel & 0x1)
-		{
-			case 0:
-				font_out((BK_W - 9 * times * 8) / 2, (BK_H - 2 * times * 8) / 2,
-			color[sel_color], times, "plot mode");
-				break;
-			case 1:
-				font_out((BK_W - 11 * times * 8) / 2, (BK_H + 2 * times * 8) / 2,
-			color[sel_color], times, "random mode");
-				break;
-			default:break;
-		}
-		
-		if(((count ++) & 0x3f) == 0)
-			sel_color ^= 0x1;
-
-		if(g_InputState.dwKey == KEY_RETURN)
-		{
-			if(sel & 0x1)
-			{
-				game_main();
-				redraw = 1;
-				game_state = GAME_START;
-			}
-			else
-			{
-				game_plot();
-				redraw = 1;
-				game_state = GAME_START;
-			}
-		}
-
-		flip(screen);
 		delay(1);
 	}
 	return;
@@ -201,7 +143,7 @@ void game_over()
 		show_bomb();
 		
 		font_out((BK_W - 9 * 8 * 8) / 2, (BK_H - 8 * 8) / 2,
-				0x3f, 8, "GAME OVER!");
+				0x3f, 7, "GAME OVER!");
 		
 		flip(screen);
 		delay(1);

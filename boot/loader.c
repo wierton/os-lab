@@ -175,7 +175,6 @@ void sprintk(char *dst, const char *ctl, ...)
 
 void wait_disk()
 {
-	//the byte read from 0x1f7 port with bits 0B01xxxxxx indicate the disk is prepared
 	while((in_byte(0x1f7) & 0xc0) != 0x40);
 }
 

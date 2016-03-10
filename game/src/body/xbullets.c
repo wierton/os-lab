@@ -151,11 +151,11 @@ void collision_drop_xbullets()
 		&& tarpos.y < pos.y + wh.y / 2
 		)
 		{
-			if(query_item_collision(ID_PLAYER, tarpos.x - pos.x + wh.x / 2, tarpos.y - pos.y + wh.y / 2))
-			{
+	//		if(query_item_collision(ID_PLAYER, tarpos.x - pos.x + wh.x / 2, tarpos.y - pos.y + wh.y / 2))
+	//		{
 				drop_xbullets[i].dead = true;
 				add_xbullets(drop_xbullets[i].ch);
-			}
+	//		}
 		}
 		i = (i + 1) % NR_DROP_XBULLETS;
 	}

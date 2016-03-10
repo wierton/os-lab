@@ -25,6 +25,7 @@ PLANE_TRAIL_FUNC plane_trail_func[] = {line};
 #define NR_PLANE_FUNC (sizeof(plane_trail_func)/sizeof(plane_trail_func[0]))
 
 static PLANE plane[NR_PLANE], *empty, *full;
+static int tti = 0;
 
 void init_plane()
 {
@@ -36,7 +37,6 @@ void init_plane()
         plane[i].plane_helper.dx = 0;
         plane[i].plane_trail = NULL;
 		plane[i].life = 0;
-		plane[i].count = 0;
 		plane[i].ti = 0;
 		plane[i].nr_bullets = 0;
 		for(j = 0; j < NR_PLANE_HANDLE; j++)
@@ -89,7 +89,6 @@ void free_plane(LPPLANE target)
     LPPLANE prev = target->prev;
 		
 	target->life = 0;
-	target->count = 0;
 	target->ti = 0;
 	target->nr_bullets = 0;
 
@@ -111,24 +110,23 @@ void free_plane(LPPLANE target)
 
 void move_plane()
 {
-	int i, j;
+	int i, j, tj;
+	tti ++;
 	for(i = 0; i < NR_PLANE; i++)
 	{
-		plane[i].ti ++;
-		if(plane[i].ti % 16 == 0)
-		{
-			if(plane[i].count < plane[i].nr_bullets)
-				plane[i].count ++;
-		}
-		
-		for(j = 0; j < plane[i].count; j++)
+		tj = -1;
+		for(j = 0; j < plane[i].nr_bullets; j++)
 		{
 			move_bullet(&(plane[i].handle[j]), plane[i].plane_helper.pos);
 			if(plane[i].life > 0 && plane[i].handle[j] == INVALID_HANDLE_VALUE)
 			{
-				plane[i].handle[j] = alloc_bullet(plane[i].nr_bullets);
-				set_bullet(plane[i].handle[j], &(plane[i].ibs));
+				tj = j;
 			}
+		}
+		if((tti & 0x1f) == 0 && tj != -1)
+		{
+			plane[i].handle[tj] = alloc_bullet(plane[i].nr_bullets);
+			set_bullet(plane[i].handle[tj], &(plane[i].ibs));
 		}
 	}
 
@@ -153,7 +151,6 @@ void set_plane(LPPLANE target, uint32_t planeID, uint32_t funcID, LPPLANE_HELPER
 	set_bullet(target->handle[0], lpibs);
 	target->plane_trail = plane_trail_func[funcID];
 	target->life = query_life_atk(planeID);
-	target->count = 1;
 	target->planeID = planeID;
 	target->nr_bullets = nr_bullets;
 	target->ibs = *lpibs;
@@ -166,7 +163,7 @@ void show_plane()
 
 	for(i = 0; i < NR_PLANE; i++)
 	{
-		for(j = 0; j < plane[i].count; j++)
+		for(j = 0; j < plane[i].nr_bullets; j++)
 		{
 			show_bullet(plane[i].handle[j]);
 		}
