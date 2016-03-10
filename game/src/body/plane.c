@@ -30,6 +30,7 @@ static int tti = 0;
 void init_plane()
 {
     int i, j;
+	tti = 0;
     
     /* init member varible */
     for(i = 0; i < NR_PLANE; i++)

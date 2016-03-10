@@ -173,17 +173,18 @@ void resume_score()
 
 void draw_toolbar()
 {
-	uint32_t i, j = 3;
+	uint32_t i, j = 4;
 	const int dist = 25;
-	font_out(BK_W - 250, dist * 1, 0x3f, 2, "score:%d", score);
-	font_out(BK_W - 250, dist * 2, 0x3f, 2, "life:%d/%d", query_player_life(), query_life_atk(ID_PLAYER));
+	font_out(BK_W - 200, dist * 1, 0x3f, 2, "score:%d", score);
+	font_out(BK_W - 200, dist * 2, 0x3f, 2, "life:%d/%d", query_player_life(), query_life_atk(ID_PLAYER));
+	font_out(BK_W - 200, dist * 3, 0x3f, 2, "w a s z x c");
 	
 	for(i = 0; i < NR_XBULLETS_LEFT; i++)
 	{
 		uint8_t dir = (uint8_t)xbullets_left[i];
 		if(xbullets[dir] > 0)
 		{
-			font_out(BK_W - 250, dist * (j ++), 0x3f, 2, "%c:%d", xbullets_left[i], xbullets[dir]);
+			font_out(BK_W - 200, dist * (j ++), 0x3f, 2, "%c:%d", xbullets_left[i], xbullets[dir]);
 		}
 	}
 }

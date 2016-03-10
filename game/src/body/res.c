@@ -12,9 +12,14 @@ struct RES_IDC {
 } res_idc[] =
 	{
 		{ID_PLAYER, {50}, {0, 0, 29, 33}},
-		{ID_ENEMY, {100}, {0, 33, 62, 50}},
-		{ID_DOT, {6}, {29, 13, 6, 6}},
+		{ID_ENEMY_SMALL, {20}, {41, 0, 33, 28}},
+		{ID_ENEMY_MEDIUM, {50}, {74, 0, 43, 42}},
+		{ID_ENEMY_BIG, {100}, {0, 33, 62, 50}},
+		{ID_ROUNDBULLET_0, {6}, {29, 13, 7, 7}},
+		{ID_ROUNDBULLET_1, {12}, {36, 0, 5, 5}},
 		{ID_BLOOD, {0}, {0, 0, BLOOD_W, BLOOD_H}},
+		{ID_DOWNMISSILE, {13}, {29, 0, 3, 13}},
+		{ID_UPMISSILE, {13}, {32, 0, 4, 8}},
 		{ID_SMALLBOMB_0, {0}, {32 * 0, 83, 32, 32}},
 		{ID_SMALLBOMB_1, {0}, {32 * 1, 83, 32, 32}},
 		{ID_SMALLBOMB_2, {0}, {32 * 2, 83, 32, 32}},

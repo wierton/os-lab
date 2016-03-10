@@ -3,7 +3,7 @@
 
 #define NR_BOMB 100
 
-#define NR_DELAYPERCALL 10
+#define NR_DELAYPERCALL 3
 
 typedef enum {IDB_SMALL, IDB_BIG} BOMB_TYPE;
 

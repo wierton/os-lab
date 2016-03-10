@@ -17,12 +17,16 @@ typedef enum {GAME_START, GAME_PROCESSING, GAME_END, GAME_RESUME, GAME_UNKNOWN} 
 
 static GAME_STATE game_state = GAME_UNKNOWN;
 
+void init_player();
+void init_plane();
+void init_bullet();
+void init_bomb();
+void init_xbullets();
 void add_drop_xbullets(char ch);
 void rand_drop_xbullets();
 void move_drop_xbullets();
 void collision_drop_xbullets();
 void show_player();
-void resume_player();
 void draw_toolbar();
 void delay(uint32_t ms);
 int read_menu();
@@ -37,14 +41,13 @@ void game_main()
 	const int NR_COUNT = 40;
 	HANDLE handle[NR_COUNT];
 	
-	resume_player();
-	
-	IBS ibs = {ID_DOT, ID_ENEMY, IDBF_SPEEDLINE, PI / 3 + 0.25, 2 * PI / 3, 1};
+	IBS ibs_small = {ID_ROUNDBULLET_0, ID_ENEMY_SMALL, IDBF_SPEEDLINE, PI / 3 + 0.25, 2 * PI / 3, 1};
+	IBS ibs_medium = {ID_DOWNMISSILE, ID_ENEMY_MEDIUM, IDBF_SPEEDLINE, 3 * PI / 8 + 0.25, 5 * PI / 8, 1};
 	
 	for(i = 0; i < NR_COUNT; i++)
 	{
 		handle[i] = alloc_bullet(13);
-		set_bullet(handle[i], &ibs);
+		set_bullet(handle[i], &ibs_small);
 	}
 
 	PLANE_HELPER plane_helper = {make_point(100, 80), 1, 0, 0};
@@ -59,7 +62,13 @@ void game_main()
 			LPPLANE newplane = alloc_plane();
 			plane_helper.pos.x = rand() % (BK_W - 100) + 50;
 			plane_helper.pos.y = 1;
-			set_plane(newplane, ID_ENEMY, IDPF_LINE, &plane_helper, 3, &ibs);
+			set_plane(newplane, ID_ENEMY_SMALL, IDPF_LINE, &plane_helper, 3, &ibs_small);
+		}
+		if((i & 0xff) == 0)
+		{
+			LPPLANE newplane = alloc_plane();
+			plane_helper.pos.x = rand() % (BK_W - 100) + 50;
+			set_plane(newplane, ID_ENEMY_MEDIUM, IDPF_LINE, &plane_helper, 3, &ibs_medium);
 		}
 		if((i & 0x3ff) == 0)
 		{
@@ -100,16 +109,20 @@ void game_main()
 
 void game_plot()
 {
-	//TODO:processing game by random in random.c
+	//TODO:processing game by plot in plot.c
 }
 
 void game_start()
 {
-	resume_player();
-	game_state = GAME_START;
-
 	while(true)
 	{
+		init_player();
+		init_plane();
+		init_bullet();
+		init_bomb();
+		init_xbullets();
+		game_state = GAME_START;
+
 		int sel = read_menu();
 
 		if(sel & 0x1)
@@ -130,7 +143,7 @@ void game_over()
 {
 	int jiffy = 0;
 	game_state = GAME_END;
-	while(jiffy ++ < 1500)
+	while(jiffy ++ < 400)
 	{
 		msgloop();
 		update_screen();
