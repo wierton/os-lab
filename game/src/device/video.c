@@ -6,6 +6,7 @@ uint32_t VMEM;
 void init_video()
 {
 	struct ModeInfoBlock *it = (struct ModeInfoBlock *)0x2000;
+	printk("sizeof ModeInfoBlock:%d\n", sizeof(struct ModeInfoBlock));
 	VMEM = it->physbase;
 }
 

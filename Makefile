@@ -1,8 +1,9 @@
 .PHNOY: run clean boot game submit gdb debug
 
-CC := gcc
+CC := gcc-4.9 # this version is ok
 QEMU := qemu-system-i386
 IMG := disk.img
+info := not found: gcc version 4.9.3 (Ubuntu 4.9.3-5ubuntu1)
 
 all: $(IMG)
 

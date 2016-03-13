@@ -37,7 +37,7 @@ typedef struct {
     float x, y;
 } POINT;
 
-inline POINT make_point(float a, float b);
+POINT make_point(float a, float b);
 
 typedef POINT (*CALC_TRAIL_FUNC)(POINT, POINT, POINT);
 

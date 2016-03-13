@@ -9,6 +9,6 @@ void srand(int seed)
 
 int rand()
 {
-	ps = 134775813 * ps + 1;
+	ps = (25173 * ps + 13849) & 0xffff;
 	return ps;
 }
