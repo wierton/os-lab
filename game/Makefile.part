@@ -1,42 +1,21 @@
-GAME_SRC_DIR := game/src
-GAME_INC_DIR := game/include
-GAME_OBJ_DIR := obj/game
-GAME_DAT_DIR := data
+game_EX_CFLAGS := -O0 -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
+game_EX_LDFLAGS := -e game_init -Ttext=0x800000
 
-GAME_CFILES = $(shell find $(GAME_SRC_DIR) -name "*.c")
-GAME_SFILES = $(shell find $(GAME_SRC_DIR) -name "*.S")
-GAME_DAT_FILES = $(shell find $(GAME_DAT_DIR) -name "*.dat")
+game_FK_OBJ_DIR := obj/game
+game_DAT_DIR := data
+game_DAT_FILES = $(shell find $(game_DAT_DIR) -name "*.dat")
+game_DAT_OBJS = $(patsubst $(game_DAT_DIR)/%.dat, $(game_FK_OBJ_DIR)/%.o, $(game_DAT_FILES))
 
-GAME_COBJS = $(patsubst $(GAME_SRC_DIR)/%.c, $(GAME_OBJ_DIR)/%.o, $(GAME_CFILES))
-GAME_SOBJS = $(patsubst $(GAME_SRC_DIR)/%.S, $(GAME_OBJ_DIR)/%.o, $(GAME_SFILES))
-GAME_DAT_OBJS = $(patsubst $(GAME_DAT_DIR)/%.dat, $(GAME_OBJ_DIR)/%.o, $(GAME_DAT_FILES))
-
-
-game_BIN := obj/game/game
-
-GAME_CFLAGS := -m32 -O0 -Wall -Werror -fno-builtin -fno-stack-protector -I$(GAME_INC_DIR) -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
-GAME_LDFLAGS := -e game_init -Ttext=0x800000
-
-$(game_BIN): $(GAME_DAT_OBJS) $(GAME_COBJS) $(GAME_SOBJS) $(LIB_COMMON) $(LIB_APP)
-	@mkdir -p $(GAME_OBJ_DIR)
-	@ld $(GAME_LDFLAGS) -o $(game_BIN) $(GAME_COBJS) $(GAME_SOBJS) $(GAME_DAT_OBJS) $(LIB_COMMON) $(LIB_APP)
-
-$(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.c
-	@echo + $<
-	@mkdir -p $(@D)
-	@$(CC) -c $< -o $@ $(GAME_CFLAGS)
-
-$(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.S
-	@echo + $<
-	@mkdir -p $(@D)
-	@$(CC) -c $< -o $@ $(GAME_CFLAGS)
-
-$(GAME_OBJ_DIR)/%.o: $(GAME_DAT_DIR)/%.dat
+$(game_FK_OBJ_DIR)/%.o: $(game_DAT_DIR)/%.dat
 	@echo + $<
 	@mkdir -p $(@D)
 	@objcopy -I binary -O elf32-i386 -B i386 $< $@
 
+game_EX_FILES_DEPENDED := $(game_DAT_OBJS) $(LIB_COMMON) $(LIB_APP)
+
+$(eval $(call make_common_rules,game,$(game_EX_CFLAGS),$(game_EX_LDFLAGS),$(game_EX_FILES_DEPENDED)))
+
 .PHNOY: clean-game
 
 clean-game:
-	@rm -rf $(GAME_OBJ_DIR)
+	@rm -rf $(game_OBJ_DIR)

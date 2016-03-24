@@ -1,6 +1,8 @@
 #ifndef __X86_H__
 #define __X86_H__
 
+#include "x86/cpu.h"
+
 #define NR_IRQ 256
 #define INTERRUPT_GATE_32 0xe
 #define TRAP_GATE_32 0xf
@@ -29,15 +31,5 @@ typedef struct {
 	uint32_t eip, cs, eflags;
 } TrapFrame;
 
-
-static inline void cli()
-{
-	asm volatile("cli");
-}
-
-static inline void sti()
-{
-	asm volatile("sti");
-}
 
 #endif

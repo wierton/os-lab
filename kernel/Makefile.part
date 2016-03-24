@@ -1,34 +1,10 @@
-KERNEL_SRC_DIR := kernel/src
-KERNEL_INC_DIR := kernel/include
-KERNEL_OBJ_DIR := obj/kernel
+kernel_EX_CFLAGS := -O0 -I$(LIB_COMMON_DIR)
+kernel_EX_LDFLAGS := -e main -Ttext=0x100000
+kernel_EX_RULES := bash fill.sh $$@ 102400
 
-KERNEL_CFILES = $(shell find $(KERNEL_SRC_DIR) -name "*.c")
-KERNEL_SFILES = $(shell find $(KERNEL_SRC_DIR) -name "*.S")
-
-KERNEL_COBJS = $(patsubst $(KERNEL_SRC_DIR)/%.c, $(KERNEL_OBJ_DIR)/%.o, $(KERNEL_CFILES))
-KERNEL_SOBJS = $(patsubst $(KERNEL_SRC_DIR)/%.S, $(KERNEL_OBJ_DIR)/%.o, $(KERNEL_SFILES))
-
-kernel_BIN := obj/kernel/kernel
-
-KERNEL_CFLAGS := -m32 -O0 -Wall -Werror -fno-builtin -fno-stack-protector -I$(KERNEL_INC_DIR) -I$(LIB_COMMON_DIR)
-KERNEL_LDFLAGS := -e main -Ttext=0x100000
-
-$(kernel_BIN): $(KERNEL_COBJS) $(KERNEL_SOBJS) $(LIB_COMMON)
-	@mkdir -p $(KERNEL_OBJ_DIR)
-	@ld $(KERNEL_LDFLAGS) -o $(kernel_BIN) $(KERNEL_COBJS) $(KERNEL_SOBJS) $(LIB_COMMON)
-	@bash fill.sh $(kernel_BIN) 102400
-
-$(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c
-	@echo + $<
-	@mkdir -p $(@D)
-	@$(CC) -c $< -o $@ $(KERNEL_CFLAGS)
-
-$(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC_DIR)/%.S
-	@echo + $<
-	@mkdir -p $(@D)
-	@$(CC) -c $< -o $@ $(KERNEL_CFLAGS)
+$(eval $(call make_common_rules,kernel,$(kernel_EX_CFLAGS),$(kernel_EX_LDFLAGS),$(LIB_COMMON),,$(kernel_EX_RULES)))
 
 .PHNOY: clean-kernel
 
 clean-kernel:
-	@rm -rf $(KERNEL_OBJ_DIR)
+	@rm -rf $(kernel_OBJ_DIR)

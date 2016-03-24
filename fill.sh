@@ -18,7 +18,7 @@ if [ $size -gt $(( $2 - 2 )) ];then
 	exit -1
 fi
 
-echo -e "\033[1;31mfile size $size is OK!\033[0m"
+echo -e "\033[1;32mfile size $size is OK!\033[0m"
 
 exbytes=$(( $2 - $size - 2 ))
 
