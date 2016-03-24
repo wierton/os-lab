@@ -1,52 +1,42 @@
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef __GAME_COMMON_H__
+#define __GAME_COMMON_H__
 
-#define VIRTUAL
-#define SERIAL_PORT  0x3F8
+#include "type.h"
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include "math.h"
 
-#define NULL ((void *) 0)
-typedef unsigned int size_t;
-typedef int bool;
-typedef char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-#define true 1
-#define false 0
+#include "device/video.h"
+#include "font/font.h"
+#include "surface.h"
+#include "debug.h"
+#include "item.h"
+#include "msg.h"
+#include "bomb.h"
 
-typedef unsigned short WORD;
-typedef long LONG;
-typedef unsigned int DWORD;
+#define BK_W 640
+#define BK_H 480
 
-static inline void out_byte(short port, uint8_t data)
+#define INVALID_SCANCODE 0xffffffff
+
+#define is_inbounder(x, y) ((x < BK_W) && (x >= 0) && (y < BK_H) && (y >= 0))
+
+typedef uint32_t HANDLE;
+
+static inline float dist(POINT a, POINT b)
 {
-	asm volatile("out %0, %1"::"a"(data), "d"(port));
+    float dx = fabs(a.x-b.x);
+    float dy = fabs(a.y-b.y);
+    return sqrt(dx*dx+dy*dy);
 }
 
-static inline void out_word(short port, uint16_t data)
-{
-	asm volatile("out %0, %1"::"a"(data), "d"(port));
-}
+#define INF 0x7fffffff
 
-static inline uint8_t in_byte(short port)
-{
-	uint8_t data;
-	asm volatile("in %1, %0":"=a"(data):"d"(port));
-	return data;
-}
+#define INVALID_HANDLE_VALUE 0xffffffff
 
-static inline uint32_t in_long(short port)
-{
-	uint32_t data;
-	asm volatile("in %1, %0":"=a"(data):"d"(port));
-	return data;
-}
+#define PI 3.1415926
 
-#include "lib.h"
+#define E 2.71828
+
+void update_screen();
 
 #endif

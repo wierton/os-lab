@@ -14,11 +14,12 @@ GAME_DAT_OBJS = $(patsubst $(GAME_DAT_DIR)/%.dat, $(GAME_OBJ_DIR)/%.o, $(GAME_DA
 
 game_BIN := obj/game/game
 
-GAME_CFLAGS := -m32 -O0 -Wall -Werror -fno-builtin -fno-stack-protector -I$(GAME_INC_DIR)
+GAME_CFLAGS := -m32 -O0 -Wall -Werror -fno-builtin -fno-stack-protector -I$(GAME_INC_DIR) -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
+GAME_LDFLAGS := -e game_init -Ttext=0x800000
 
-$(game_BIN): $(GAME_DAT_OBJS) $(GAME_COBJS) $(GAME_SOBJS)
+$(game_BIN): $(GAME_DAT_OBJS) $(GAME_COBJS) $(GAME_SOBJS) $(LIB_COMMON) $(LIB_APP)
 	@mkdir -p $(GAME_OBJ_DIR)
-	@ld -e main -Ttext=0x100000 -o $(game_BIN) $(GAME_COBJS) $(GAME_SOBJS) $(GAME_DAT_OBJS)
+	@ld $(GAME_LDFLAGS) -o $(game_BIN) $(GAME_COBJS) $(GAME_SOBJS) $(GAME_DAT_OBJS) $(LIB_COMMON) $(LIB_APP)
 
 $(GAME_OBJ_DIR)/%.o: $(GAME_SRC_DIR)/%.c
 	@echo + $<

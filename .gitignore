@@ -3,6 +3,7 @@ obj
 obj/*
 disk.img
 *~
+*.a
 !.gitignore
 !README.md
 !Makefile*

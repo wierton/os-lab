@@ -1,0 +1,24 @@
+LIB_APP_SRC_DIR := lib-app/src
+LIB_APP_INC_DIR := lib-app/include
+LIB_APP_OBJ_DIR := obj/lib-app
+LIB_APP := lib-app/libapp.a
+
+LIB_APP_CFILES = $(shell find $(LIB_APP_SRC_DIR) -name "*.c")
+
+LIB_APP_OBJS = $(patsubst $(LIB_APP_SRC_DIR)/%.c, $(LIB_APP_OBJ_DIR)/%.o, $(LIB_APP_CFILES))
+
+LIB_APP_CFLAGS := -m32 -O0 -Wall -Werror -fno-builtin -fno-stack-protector -I$(LIB_APP_INC_DIR)
+
+$(LIB_APP): $(LIB_APP_OBJS)
+	@mkdir -p $(LIB_APP_OBJ_DIR)
+	@ar r $(LIB_APP) $(LIB_APP_OBJS)
+
+$(LIB_APP_OBJ_DIR)/%.o: $(LIB_APP_SRC_DIR)/%.c
+	@echo + $<
+	@mkdir -p $(@D)
+	@$(CC) -c $< -o $@ $(LIB_APP_CFLAGS)
+
+.PHNOY: clean-lib-app
+
+clean-lib-app:
+	@rm -rf $(LIB_APP_OBJ_DIR)
