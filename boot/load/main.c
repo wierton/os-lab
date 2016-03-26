@@ -3,6 +3,8 @@
 #define DEBUG
 #ifdef DEBUG
 
+#define va_to_pa(addr) ((addr) - 0xc0000000)
+
 static char *dststr = NULL;
 typedef void (*PRINTER)(char);
 
@@ -226,14 +228,14 @@ void loader()
 
 	for(i = 0; i < elf->e_phnum; i++)
 	{
-		read_disk(ph->p_paddr, ph->p_offset, ph->p_filesz);
+		read_disk(va_to_pa(ph->p_vaddr), ph->p_offset, ph->p_filesz);
 		/*zero the memory [paddr + filesz, paddr + memsz)*/
-		for(j = ph->p_paddr + ph->p_filesz; j < ph->p_paddr + ph->p_memsz; j++)
+		for(j = va_to_pa(ph->p_vaddr) + ph->p_filesz; j < va_to_pa(ph->p_vaddr) + ph->p_memsz; j++)
 		{
 			((uint8_t *)j)[0] = 0;
 		}
 		ph++;
 	}
 
-	asm volatile("push %0;ret"::"a"(elf->e_entry));
+	asm volatile("push %0;ret"::"a"(va_to_pa(elf->e_entry)));
 }

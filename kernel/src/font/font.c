@@ -37,5 +37,5 @@ void draw_str(int x, int y, uint32_t color, uint8_t times, const char *ctl, ...)
 
 void init_font()
 {
-	draw_str(200, 270, make_rgb(0x80, 0x10, 0x50), 4, "Hello World!");
+	draw_str(128, 224, make_rgb(0x80, 0x10, 0x50), 4, "Hello World!");
 }

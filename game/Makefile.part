@@ -1,5 +1,5 @@
 game_EX_CFLAGS := -O0 -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
-game_EX_LDFLAGS := -e game_init -Ttext=0x800000
+game_EX_LDFLAGS := -e game_init
 
 game_FK_OBJ_DIR := obj/game
 game_DAT_DIR := data

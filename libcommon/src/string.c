@@ -1,16 +1,22 @@
 #include "common.h"
 #include "string.h"
-/*
-void memcpy_asm(void *dst, size_t len, void *src)
+
+void inline memcpy(void *dst, size_t len, void *src)
 {
-	asm volatile("cld;\
-			movl %0, %%ecx;\
-			movl %1, %%esi;\
-			movl %2, %%edi;\
-			rep movsl;
-			"::"m"(len), "a"(src), "b"(dst));
+	asm volatile("rep movsb"::"c"(len), "S"(src), "D"(dst));
 }
-*/
+
+void inline memset(void *dst, size_t len, uint8_t val)
+{
+	asm volatile("rep stosb"::"a"(val), "D"(dst));
+}
+
+int strcmp(char *src, char *dst)
+{
+	while(*src++ == *dst++);
+	return *dst - *src;
+}
+
 size_t strlen(char *str)
 {
 	char *ptr = str;

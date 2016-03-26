@@ -42,11 +42,11 @@ void vec10();
 void vec11();
 void vec12();
 void vec13();
-void vec46();
 void vecsys();
 
 void irq0(); // timer
 void irq1(); // keyboard
+void irq14(); // disk
 
 void irq_empty(); // unhandled
 
@@ -72,12 +72,12 @@ void init_idt()
 	set_trap(idt + 11, (uint32_t)vec11, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 12, (uint32_t)vec12, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 13, (uint32_t)vec13, SEG_KERNEL_CODE, DPL_KERNEL);
-	set_intr(idt + 46, (uint32_t)vec46, SEG_KERNEL_CODE, DPL_KERNEL);
 	
 	set_intr(idt + 0x80, (uint32_t)vecsys, SEG_KERNEL_CODE, DPL_KERNEL);
 
-	set_intr(idt + 32, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
-	set_intr(idt + 33, (uint32_t)irq1, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_intr(idt + 32 + 0, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_intr(idt + 32 + 1, (uint32_t)irq1, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_intr(idt + 32 + 14, (uint32_t)irq14, SEG_KERNEL_CODE, DPL_KERNEL);
 
 	uint16_t volatile data[3];
 	data[0] = sizeof(idt) - 1;

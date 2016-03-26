@@ -1,6 +1,7 @@
 #include "common.h"
 #include "x86/x86.h"
 
+void init_page();
 void init_8259();
 void init_timer();
 void init_idt();
@@ -14,17 +15,18 @@ int exec(const char* path);
 
 int main()
 {
-	init_video();
+	init_page();
 	init_serial();
+	init_video();
+	test_printk();
 	init_timer();
 	init_idt();
 	init_keyboard();
 	init_8259();
 	init_disk();
 	init_font();
-	test_printk();
 	sti();
-	exec("game");
+//	exec("game");
 	while(1);
 	return 0;
 }

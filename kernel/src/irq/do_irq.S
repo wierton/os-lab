@@ -12,11 +12,11 @@
 .global vec11; vec11: pushl $11; jmp do_irq;
 .global vec12; vec12: pushl $12; jmp do_irq;
 .global vec13; vec13: pushl $13; jmp do_irq;
-.global vec46; vec46: pushl $46; jmp do_irq;
 .global vecsys; vecsys: pushl $0x80; jmp do_irq;
 
 .global irq0; irq0: pushl $1000; jmp do_irq; # timer
 .global irq1; irq1: pushl $1001; jmp do_irq; # keyboard
+.global irq14; irq14: pushl $0x2e; jmp do_irq; # disk interrupt
 
 .global irq_empty; irq_empty: pushl $-1; jmp do_irq; # unhandled
 

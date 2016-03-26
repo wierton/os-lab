@@ -4,12 +4,15 @@
 #include "x86/x86.h"
 
 uint32_t VMEM;
+void create_vmmap();
 
 void init_video()
 {
 	struct ModeInfoBlock *it = (struct ModeInfoBlock *)0x2000;
 	printk("sizeof ModeInfoBlock:%d\n", sizeof(struct ModeInfoBlock));
 	VMEM = it->physbase;
+	create_vmmap();
+	draw_rect(0, 0, SCR_W, SCR_H, 0x222200);
 }
 
 uint8_t get_r(uint32_t color)

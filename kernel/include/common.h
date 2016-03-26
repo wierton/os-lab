@@ -6,6 +6,9 @@
 #define VIRTUAL
 #define SERIAL_PORT  0x3F8
 
+#define KERNEL_BASE 0xc0000000
+#define va_to_pa(addr) (((void *)addr) - KERNEL_BASE)
+
 void printk(const char *ctl, ...);
 void sprintk(char *dst, const char *ctl, ...);
 void vsprintk(char *dst, const char *ctl, void **args);
