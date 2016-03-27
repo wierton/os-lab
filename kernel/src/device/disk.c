@@ -2,7 +2,7 @@
 #include "math.h"
 #include "x86/x86.h"
 
-void wait_disk()
+void __attribute__((noinline)) wait_disk()
 {
 	while((in_byte(0x1f7) & 0xc0) != 0x40);
 }

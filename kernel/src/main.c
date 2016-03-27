@@ -2,6 +2,8 @@
 #include "x86/x86.h"
 
 void init_page();
+void init_mm();
+void init_udir();
 void init_8259();
 void init_timer();
 void init_idt();
@@ -11,22 +13,35 @@ void init_video();
 void init_disk();
 void init_font();
 void test_printk();
-int exec(const char* path);
+void init_segment();
+void load_game();
 
-int main()
+void init_cond();
+
+extern uint32_t _stack_end_;
+
+void init_prev()
 {
 	init_page();
-	init_serial();
-	init_video();
-	test_printk();
-	init_timer();
+	asm volatile("movl %0, %%esp"::"a"(&_stack_end_));
+	asm volatile("jmpl *%0"::"r"(init_cond));
+}
+
+void init_cond()
+{
+	init_segment();
+
 	init_idt();
-	init_keyboard();
+	init_serial();
 	init_8259();
-	init_disk();
-	init_font();
+	init_timer();
+	init_keyboard();
+	init_video();
 	sti();
-//	exec("game");
+
+	init_udir();
+	init_mm();
+	init_font();
+	load_game();
 	while(1);
-	return 0;
 }

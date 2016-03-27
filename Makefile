@@ -1,4 +1,4 @@
-.PHNOY: run clean boot game kernel lib submit gdb debug
+.PHNOY: count run clean boot game kernel lib submit gdb debug
 
 CC := gcc-4.9 # this version is ok
 LD := ld
@@ -39,6 +39,10 @@ run: $(IMG)
 clean:
 	@rm -f $(IMG) $(LIB_COMMON) $(LIB_APP)
 	@rm -rf obj
+
+count:
+	@printf "lines:"
+	@find . -name "*.c" -or -name "*.h" -or -name "Makefile*" | xargs cat | wc -l
 
 submit: clean
 	@cd .. && tar cvj $(shell pwd | grep -o '[^/]*$$') > 141242068.tar.bz2

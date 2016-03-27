@@ -9,7 +9,6 @@ void create_vmmap();
 void init_video()
 {
 	struct ModeInfoBlock *it = (struct ModeInfoBlock *)0x2000;
-	printk("sizeof ModeInfoBlock:%d\n", sizeof(struct ModeInfoBlock));
 	VMEM = it->physbase;
 	create_vmmap();
 	draw_rect(0, 0, SCR_W, SCR_H, 0x222200);

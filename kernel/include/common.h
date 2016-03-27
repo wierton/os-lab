@@ -7,6 +7,8 @@
 #define SERIAL_PORT  0x3F8
 
 #define KERNEL_BASE 0xc0000000
+#define KERNEL_PHYBASE 0x100000
+#define KERNEL_SIZE (1 << 17)
 #define va_to_pa(addr) (((void *)addr) - KERNEL_BASE)
 
 void printk(const char *ctl, ...);

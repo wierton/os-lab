@@ -17,4 +17,8 @@ typedef unsigned short WORD;
 typedef long LONG;
 typedef unsigned int DWORD;
 
+typedef uint32_t HANDLE;
+
+#define INVALID_HANDLE_VALUE 0xffffffff
+
 #endif

@@ -25,5 +25,8 @@ static inline uint32_t make_pte(uint32_t addr)
 	return ((addr & 0xfffff000) | 0x7);
 }
 
+HANDLE apply_udir();
+HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size);
+void load_udir(HANDLE hProgress);
 
 #endif
