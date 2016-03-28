@@ -29,15 +29,15 @@ void init_page()
 	/* init the page directory firstly */
 	for(i = 0; i < (PHY_SIZE / PD_MEM_SIZE); i++)
 	{
-		pdir[i].val = make_pde((uint32_t)kptab);
-		pdir[i + (KERNEL_BASE / PD_MEM_SIZE)].val = make_pde((uint32_t)kptab);
+		pdir[i].val = make_sys_pde((uint32_t)kptab);
+		pdir[i + (KERNEL_BASE / PD_MEM_SIZE)].val = make_sys_pde((uint32_t)kptab);
 		kptab += PD_PT_SIZE;
 	}
 
 	/* init the page table nextly(direct map to physical memory) */
 	for(i = 0; i < PHY_SIZE; i += PAGE_SIZE)
 	{
-		ptab[i / PAGE_SIZE].val = make_pte(i);
+		ptab[i / PAGE_SIZE].val = make_sys_pte(i);
 	}
 
 	CR3 cr3;

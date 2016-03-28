@@ -2,9 +2,11 @@
 #include "x86/x86.h"
 #include "x86/memory.h"
 #include "device/disk.h"
-#include "progress/exec.h"
+#include "process/exec.h"
 
 #define DISK_START 102400
+#define GAME_STACK_ADDR 0x50000000
+#define GAME_STACK_SIZE (1 << 22)
 
 uint32_t load_elf(uint32_t disk_start)
 {
@@ -16,6 +18,7 @@ uint32_t load_elf(uint32_t disk_start)
 	read_disk(((uint32_t)ph), disk_start + elf.e_phoff, elf.e_phnum * elf.e_phentsize);
 
 	HANDLE hGame = apply_udir();
+	mm_alloc(hGame, GAME_STACK_ADDR - GAME_STACK_SIZE, GAME_STACK_SIZE);
 	load_udir(hGame);
 
 	/* load into memory */
@@ -44,10 +47,14 @@ uint32_t load_elf(uint32_t disk_start)
 void load_game()
 {
 	uint32_t eip = load_elf(DISK_START);
-	//construct trapframe
+	/* construct trapframe */
 	TrapFrame tf;
 	tf.eip = eip;
 	tf.cs = 0x8;
-	tf.eflags = 0;
-	asm volatile("pushl %0;pushl %1;pushl %2;iret;"::"r"(tf.eflags), "r"(tf.cs), "r"(tf.eip));
+	tf.eflags = 0x246;
+	asm volatile("movl %0, %%esp;\
+			pushl %1;\
+			pushl %2;\
+			pushl %3;\
+			iret;"::"i"(GAME_STACK_ADDR), "r"(tf.eflags), "r"(tf.cs), "r"(tf.eip));
 }

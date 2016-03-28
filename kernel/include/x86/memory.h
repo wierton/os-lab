@@ -15,12 +15,22 @@
 #define PT_MEM_SIZE (1 << NR_PT_MEM)
 #define PD_MEM_SIZE (1 << NR_PD_MEM)
 
-static inline uint32_t make_pde(uint32_t addr)
+static inline uint32_t make_sys_pde(uint32_t addr)
+{
+	return ((addr & 0xfffff000) | 0x3);
+}
+
+static inline uint32_t make_sys_pte(uint32_t addr)
+{
+	return ((addr & 0xfffff000) | 0x3);
+}
+
+static inline uint32_t make_usr_pde(uint32_t addr)
 {
 	return ((addr & 0xfffff000) | 0x7);
 }
 
-static inline uint32_t make_pte(uint32_t addr)
+static inline uint32_t make_usr_pte(uint32_t addr)
 {
 	return ((addr & 0xfffff000) | 0x7);
 }

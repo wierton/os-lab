@@ -101,13 +101,13 @@ int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER pri
 	return 0;
 }
 
-void printf(const char *ctl, ...)
+void __attribute__((noinline)) printf(const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
 	vfprintf(ctl, args, printc);
 }
 
-void sprintf(char *dst, const char *ctl, ...)
+void __attribute__((noinline)) sprintf(char *dst, const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
 	dststr = dst;
@@ -116,7 +116,7 @@ void sprintf(char *dst, const char *ctl, ...)
 	dststr = NULL;
 }
 
-void vsprintf(char *dst, const char *ctl, void **args)
+void __attribute__((noinline)) vsprintf(char *dst, const char *ctl, void **args)
 {
 	dststr = dst;
 	vfprintf(ctl, args, sprintc);

@@ -1,7 +1,7 @@
 #include "common.h"
 #include "x86/x86.h"
 #include "x86/memory.h"
-#include "progress/progress.h"
+#include "process/process.h"
 
 #define NR_PUDIR 1024
 
@@ -33,7 +33,7 @@ HANDLE apply_udir()
 	return INVALID_HANDLE_VALUE;
 }
 
-/* allocate virtual page for progress */
+/* allocate virtual page for process */
 HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size)
 {
 	int i;
@@ -48,12 +48,12 @@ HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size)
 	size += ex_bytes;
 
 	//bug here
-	for(i = vaddr; i <= vaddr + size; i += PD_MEM_SIZE)
+	for(i = vaddr; i < vaddr + size; i += PD_MEM_SIZE)
 	{
 		if(!kpudir[i / PD_MEM_SIZE].present)
 		{
 			PTE *tmp = apply_phypage();
-			kpudir[i / PD_MEM_SIZE].val = make_pde((uint32_t)va_to_pa(tmp));
+			kpudir[i / PD_MEM_SIZE].val = make_usr_pde((uint32_t)va_to_pa(tmp));
 		}
 	}
 	return hProgress;
@@ -70,7 +70,7 @@ void load_udir(HANDLE hProgress)
 
 void init_udir()
 {
-	//kernel space is shared by all progress
+	//kernel space is shared by all process
 	int i, j;
 	PDE * kpdir = get_pdir();
 	for(i = 0; i < NR_PROGRESS; i++)

@@ -15,12 +15,12 @@ void create_vmmap()
 	PTE *kptab = va_to_pa(vmmap);
 	for(i = ((VMEM >> 22) & 0x3ff); i <= (((VMEM + SCR_BITSIZE) >> 22) & 0x3ff); i++)
 	{
-		kpdir[i].val = make_pde((uint32_t)kptab);
+		kpdir[i].val = make_sys_pde((uint32_t)kptab);
 		kptab += PD_PT_SIZE;
 	}
 
 	for(i = 0; i <= SCR_BITSIZE; i += PAGE_SIZE)
 	{
-		vmmap[i / PAGE_SIZE].val = make_pte(VMEM + i);
+		vmmap[i / PAGE_SIZE].val = make_sys_pte(VMEM + i);
 	}
 }

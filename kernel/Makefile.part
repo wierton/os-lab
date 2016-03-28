@@ -1,4 +1,4 @@
-kernel_EX_CFLAGS := -O2 -MMD -I$(LIB_COMMON_DIR)
+kernel_EX_CFLAGS := -O2 -I$(LIB_COMMON_DIR)
 kernel_EX_LDFLAGS := -m elf_i386 -e _start -Ttext=0xc0100000
 kernel_EX_RULES := bash fill.sh $$@ 102400
 
