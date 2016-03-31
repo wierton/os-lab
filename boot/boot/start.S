@@ -15,9 +15,9 @@
 	.word 0, 0;\
 	.byte 0, 0, 0, 0
 
-#define MAKE_SEG_DESC(type,base,lim)\
+#define MAKE_SEG_DESC(type,base,lim,dpl)\
 	.word ((lim) & 0xffff), ((base) & 0xffff);\
-	.byte (((base) >> 16) & 0xff), (0x90 | (type)),\
+	.byte (((base) >> 16) & 0xff), (0x90 | (type) | ((dpl) << 5)),\
 	(0xC0 | (((lim) >> 16) & 0xf)), (((base) >> 24) & 0xff)
 
 .code16
@@ -72,8 +72,10 @@ start_next:
 .p2align 2
 gdtdesc:
 	MAKE_NULL_DESC
-	MAKE_SEG_DESC(0xa, 0x0, 0xffffffff)		# code
-	MAKE_SEG_DESC(0x2, 0x0, 0xffffffff)		# data
+	MAKE_SEG_DESC(0xa, 0x0, 0xffffffff, 0x0)		# code
+	MAKE_SEG_DESC(0x2, 0x0, 0xffffffff, 0x0)		# data
+	MAKE_SEG_DESC(0xa, 0x0, 0xffffffff, 0x3)		# usr code
+	MAKE_SEG_DESC(0x2, 0x0, 0xffffffff, 0x3)		# usr data
 
 gdtr:
 	.word (gdtr - gdtdesc - 1)	# limit

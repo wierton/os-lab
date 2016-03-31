@@ -13,10 +13,6 @@ void irq_handle(TrapFrame *tf)
 		{
 			do_syscall(tf);
 		}
-		else if(tf->irq == 46)
-		{
-			return;
-		}
 		else
 		{
 			printk("\033[1;31mUnhandled exception : #%d at 0x%x\n\033[0m", tf->irq, tf->eip);
@@ -35,6 +31,8 @@ void irq_handle(TrapFrame *tf)
 		out_byte(0x61, val);
 		keyboard_event(code);
 	}
+	else if(tf->irq == 1014)
+	{}
 	else
 	{
 		assert(0);

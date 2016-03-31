@@ -37,7 +37,7 @@ void init_page()
 	/* init the page table nextly(direct map to physical memory) */
 	for(i = 0; i < PHY_SIZE; i += PAGE_SIZE)
 	{
-		ptab[i / PAGE_SIZE].val = make_sys_pte(i);
+		ptab[i / PAGE_SIZE].val = make_usr_pte(i);
 	}
 
 	CR3 cr3;

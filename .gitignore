@@ -4,6 +4,7 @@ obj/*
 disk.img
 *~
 *.a
+tags
 !.gitignore
 !README.md
 !Makefile*

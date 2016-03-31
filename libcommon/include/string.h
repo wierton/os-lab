@@ -3,5 +3,6 @@
 
 size_t strlen(char *);
 int strcat(char *, char *);
+void inline memset(void *dst, size_t len, uint8_t val);
 
 #endif

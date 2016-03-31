@@ -1,6 +1,17 @@
 #include "common.h"
 #include "x86/x86.h"
 
+#define NR_IRQ 256
+#define INTERRUPT_GATE_32 0xe
+#define TRAP_GATE_32 0xf
+
+#define DPL_KERNEL              0
+#define DPL_USER                3
+
+#define NR_SEGMENTS             3
+#define SEG_KERNEL_CODE         1 
+#define SEG_KERNEL_DATA         2
+
 GateDescriptor idt[NR_IRQ];
 
 void set_trap(GateDescriptor *gdr, uint32_t offset, uint32_t selector, uint32_t dpl)
@@ -61,8 +72,8 @@ void init_idt()
 	set_trap(idt + 0, (uint32_t)vec0, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 1, (uint32_t)vec1, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 2, (uint32_t)vec2, SEG_KERNEL_CODE, DPL_KERNEL);
-	set_trap(idt + 3, (uint32_t)vec3, SEG_KERNEL_CODE, DPL_KERNEL);
-	set_trap(idt + 4, (uint32_t)vec4, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_trap(idt + 3, (uint32_t)vec3, SEG_KERNEL_CODE, DPL_USER);
+	set_trap(idt + 4, (uint32_t)vec4, SEG_KERNEL_CODE, DPL_USER);
 	set_trap(idt + 5, (uint32_t)vec5, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 6, (uint32_t)vec6, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 7, (uint32_t)vec7, SEG_KERNEL_CODE, DPL_KERNEL);
@@ -73,7 +84,7 @@ void init_idt()
 	set_trap(idt + 12, (uint32_t)vec12, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 13, (uint32_t)vec13, SEG_KERNEL_CODE, DPL_KERNEL);
 	
-	set_intr(idt + 0x80, (uint32_t)vecsys, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_intr(idt + 0x80, (uint32_t)vecsys, SEG_KERNEL_CODE, DPL_USER);
 
 	set_intr(idt + 32 + 0, (uint32_t)irq0, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_intr(idt + 32 + 1, (uint32_t)irq1, SEG_KERNEL_CODE, DPL_KERNEL);

@@ -8,7 +8,10 @@ void inline memcpy(void *dst, size_t len, void *src)
 
 void inline memset(void *dst, size_t len, uint8_t val)
 {
-	asm volatile("rep stosb"::"a"(val), "D"(dst));
+	int i;
+	for(i = 0; i < len; i++)
+		((uint8_t *)dst)[i] = val;
+//	asm volatile("rep stosb"::"a"(val), "D"(dst));
 }
 
 int strcmp(char *src, char *dst)

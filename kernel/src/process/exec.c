@@ -48,13 +48,23 @@ void load_game()
 {
 	uint32_t eip = load_elf(DISK_START);
 	/* construct trapframe */
-	TrapFrame tf;
-	tf.eip = eip;
-	tf.cs = 0x8;
-	tf.eflags = 0x246;
-	asm volatile("movl %0, %%esp;\
-			pushl %1;\
-			pushl %2;\
-			pushl %3;\
-			iret;"::"i"(GAME_STACK_ADDR), "r"(tf.eflags), "r"(tf.cs), "r"(tf.eip));
+	TrapFrame *tf = (void *)GAME_STACK_ADDR - sizeof(TrapFrame);
+
+	/* pop */
+	tf->ds = 0x20 | 0x3;
+	tf->es = 0x20 | 0x3;
+	/* iret */
+	tf->eflags = 0x246;
+	tf->cs = 0x18 | 0x3;
+	tf->eip = eip;
+	/* cross rings */
+	tf->esp = GAME_STACK_ADDR - 4;
+	tf->ss = 0x20 | 0x3;
+
+	asm volatile("movl %0, %%esp;"
+			"popal;"
+			"popl %%es;"
+			"popl %%ds;"
+			"addl $8, %%esp;"
+			"iret;"::"r"(tf));
 }

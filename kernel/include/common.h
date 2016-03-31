@@ -2,6 +2,7 @@
 #define __COMMON_H__
 
 #include "type.h"
+#include "string.h"
 
 #define VIRTUAL
 #define SERIAL_PORT  0x3F8

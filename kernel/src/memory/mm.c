@@ -47,7 +47,6 @@ HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size)
 	vaddr -= ex_bytes;
 	size += ex_bytes;
 
-	//bug here
 	for(i = vaddr; i < vaddr + size; i += PD_MEM_SIZE)
 	{
 		if(!kpudir[i / PD_MEM_SIZE].present)

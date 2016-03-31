@@ -3,17 +3,6 @@
 
 #include "x86/cpu.h"
 
-#define NR_IRQ 256
-#define INTERRUPT_GATE_32 0xe
-#define TRAP_GATE_32 0xf
-
-#define DPL_KERNEL              0
-#define DPL_USER                3
-
-#define NR_SEGMENTS             3
-#define SEG_KERNEL_CODE         1 
-#define SEG_KERNEL_DATA         2
-
 typedef struct {
 	uint32_t offset_15_0      : 16;
 	uint32_t segment          : 16;
@@ -26,10 +15,20 @@ typedef struct {
 } GateDescriptor;
 
 typedef struct {
+	/* pusha */
 	uint32_t edi, esi, ebp, old_esp, ebx, edx, ecx, eax;
+	/**/
+	uint16_t es, pad0;
+	uint16_t ds, pad1;
 	int32_t irq;
-	uint32_t eip, cs, eflags;
+	/* defined by hardware */
+	uint32_t err;
+	uint32_t eip;
+	uint16_t cs, pad2;
+	uint32_t eflags;
+	/* cross rings */
+	uint32_t esp;
+	uint16_t ss, pad3;
 } TrapFrame;
-
 
 #endif

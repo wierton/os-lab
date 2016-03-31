@@ -29,7 +29,7 @@ $(1)_OBJS := $$($(1)_SOBJS) $$($(1)_COBJS)
 $(1)_BIN := $$($(1)_OBJ_DIR)/$(1)
 
 $(1)_CFLAGS := -c -m32 -Wall -Werror -MMD -fno-builtin -fno-stack-protector -I$$($(1)_INC_DIR) $(2)
-$(1)_LDFLAGS := $(3)
+$(1)_LDFLAGS := -nostdlib $(3)
 
 $$($(1)_OBJ_DIR)%.o: $$($(1)_SRC_DIR)%.c
 	@$$(call compile_rules, $$(@D), $$<, $$@, $$($(1)_CFLAGS))
