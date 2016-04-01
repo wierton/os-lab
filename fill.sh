@@ -6,7 +6,7 @@ if [ $# -lt 2 ]; then
 fi
 
 if [ ! -r "$1" ];then
-	echo -e "file not exist or can\'t be read"
+	echo -e "file not exist or can't be read"
 	exit -1
 fi
 

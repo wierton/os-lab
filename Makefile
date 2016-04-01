@@ -31,7 +31,7 @@ debug: $(IMG)
 	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
 
 gdb: $(IMG)
-	gdb -ex "target remote 127.0.0.1:1234" -ex "symbol $(kernel_BIN)"
+	@gdb -ex "target remote 127.0.0.1:1234" -ex "symbol $(kernel_BIN)"
 
 run: $(IMG)
 	$(QEMU) -serial stdio $(IMG)
