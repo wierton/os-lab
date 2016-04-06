@@ -1,28 +1,33 @@
 #include "common.h"
+#include "math.h"
 #include "x86/x86.h"
 #include "x86/memory.h"
 #include "process/process.h"
 
-#define NR_PUDIR 1024
+#define NRT 1024
+#define NR_PUTAB 64
 
 PTE *get_ptab();
 PDE *get_pdir();
-PTE *apply_phypage();
+uint32_t apply_phypage(HANDLE hOwner);
 
 struct PHYPAGE {
-	PTE *ptab;
+	uint32_t paddr, hOwner;
 	struct PHYPAGE *prev, *next;
 };
 
-static struct PHYPAGE *phypage_free, *phypage_full, phypage[PHY_SIZE / PD_MEM_SIZE];
+static struct PHYPAGE *phypage_free, *phypage_full, phypage[PHY_SIZE / PT_MEM_SIZE];
 
-static bool udir_dirty[NR_PROGRESS];
-static PDE pudir[NR_PROGRESS][NR_PUDIR] __attribute((aligned(PAGE_SIZE)));
+static bool udir_dirty[NR_PROCESS];
+static bool utab_dirty[NR_PUTAB];
+
+static PDE pudir[NR_PROCESS][NRT] __attribute((aligned(PAGE_SIZE)));
+static PTE putab[NR_PUTAB][NRT] __attribute((aligned(PAGE_SIZE)));
 
 HANDLE apply_udir()
 {
 	int i;
-	for(i = 0; i < NR_PROGRESS; i++)
+	for(i = 0; i < NR_PROCESS; i++)
 	{
 		if(!udir_dirty[i])
 		{
@@ -30,37 +35,65 @@ HANDLE apply_udir()
 			return i;
 		}
 	}
+	assert(0);
 	return INVALID_HANDLE_VALUE;
 }
 
-/* allocate virtual page for process */
-HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size)
+PTE *apply_utab()
 {
 	int i;
-	if(hProgress == INVALID_HANDLE_VALUE)
-		hProgress = apply_udir();
-	assert(hProgress < NR_PROGRESS);
+	for(i = 0; i < NR_PUTAB; i++)
+	{
+		if(!utab_dirty[i])
+		{
+			utab_dirty[i] = true;
+			return putab[i];
+		}
+	}
+	assert(0);
+	return NULL;
+}
 
-	PDE *kpudir = pudir[hProgress];
+/* allocate virtual page for process */
+HANDLE mm_alloc(HANDLE hProcess, uint32_t vaddr, uint32_t size)
+{
+	int i, j;
+	assert(hProcess < NR_PROCESS);
 
-	uint32_t ex_bytes = vaddr % PD_MEM_SIZE;
+	PDE *kpudir = pudir[hProcess];
+
+	uint32_t ex_dir_bytes = vaddr % PD_MEM_SIZE;
+	uint32_t dir_op = vaddr - ex_dir_bytes;
+	uint32_t dir_size = size + ex_dir_bytes;
+
+	uint32_t ex_bytes = vaddr % PT_MEM_SIZE;
 	vaddr -= ex_bytes;
 	size += ex_bytes;
 
-	for(i = vaddr; i < vaddr + size; i += PD_MEM_SIZE)
+	for(i = dir_op; i < dir_op + dir_size; i += PD_MEM_SIZE)
 	{
+		PTE *tmp_tab = (void *)(kpudir[i / PD_MEM_SIZE].page_frame << 12);
 		if(!kpudir[i / PD_MEM_SIZE].present)
 		{
-			PTE *tmp = apply_phypage();
-			kpudir[i / PD_MEM_SIZE].val = make_usr_pde((uint32_t)va_to_pa(tmp));
+			tmp_tab = apply_utab();
+			kpudir[i / PD_MEM_SIZE].val = make_usr_pde((uint32_t)va_to_pa(tmp_tab));
+		}
+
+		uint32_t j_op = max(i, vaddr);
+		uint32_t j_ed = min(i + PD_MEM_SIZE, vaddr + size);
+
+		for(j = j_op; j < j_ed; j += PT_MEM_SIZE)
+		{
+			uint32_t paddr = apply_phypage(hProcess);
+			tmp_tab[(j - i) / PT_MEM_SIZE].val = make_usr_pte(paddr);
 		}
 	}
-	return hProgress;
+	return hProcess;
 }
 
 void load_udir(HANDLE hProgress)
 {
-	assert(hProgress < NR_PROGRESS);
+	assert(hProgress < NR_PROCESS);
 	CR3 cr3;
 	cr3.val = read_cr3();
 	cr3.page_directory_base = (((uint32_t)va_to_pa(pudir[hProgress])) >> 12);
@@ -69,36 +102,45 @@ void load_udir(HANDLE hProgress)
 
 void init_udir()
 {
-	//kernel space is shared by all process
+	/* kernel space is shared by all process */
 	int i, j;
 	PDE * kpdir = get_pdir();
-	for(i = 0; i < NR_PROGRESS; i++)
+	for(i = 0; i < NR_PROCESS; i++)
 	{
-		for(j = 0; j < NR_PUDIR; j++)
+		for(j = 0; j < NRT; j++)
 		{
 			pudir[i][j].val = kpdir[j].val;
 		}
 	}
 
-	for(i = 0; i < NR_PROGRESS; i++)
+	for(i = 0; i < NR_PROCESS; i++)
 	{
 		udir_dirty[i] = false;
 	}
 }
 
-void init_mm()
+void init_utab()
 {
 	int i;
-	PTE *kptab = get_ptab();
-	uint32_t phypage_base = (KERNEL_PHYBASE + KERNEL_SIZE) / PD_MEM_SIZE + 1;
-	for(i = phypage_base; i < PHY_SIZE / PD_MEM_SIZE - 1; i++)
+
+	for(i = 0; i < NR_PUTAB; i++)
 	{
-		phypage[i].ptab = &kptab[i * PD_PT_SIZE];
+		utab_dirty[i] = false;
+	}
+}
+
+void init_phypage()
+{
+	int i;
+	uint32_t phypage_base = (KERNEL_PHYBASE + KERNEL_SIZE) / PT_MEM_SIZE + 1;
+	for(i = phypage_base; i < PHY_SIZE / PT_MEM_SIZE - 1; i++)
+	{
+		phypage[i].paddr = i * PT_MEM_SIZE;
 		phypage[i].next = &phypage[i + 1];
 		phypage[i + 1].prev = &phypage[i];
 	}
 
-	phypage[i].ptab = &kptab[i * PD_PT_SIZE];
+	phypage[i].paddr = i * PT_MEM_SIZE;
 	phypage[i].next = NULL;
 	
 	phypage[phypage_base].prev = NULL;
@@ -107,7 +149,14 @@ void init_mm()
 	phypage_full = NULL;
 }
 
-PTE *apply_phypage()
+void init_mm()
+{
+	init_udir();
+	init_utab();
+	init_phypage();
+}
+
+uint32_t apply_phypage(HANDLE hOwner)
 {
 	struct PHYPAGE * tmp = phypage_free;
 	assert(phypage_free != NULL);
@@ -119,7 +168,8 @@ PTE *apply_phypage()
 		phypage_full->prev = tmp;
 	phypage_full = tmp;
 
-	return tmp->ptab;
+	tmp->hOwner = hOwner;
+	return tmp->paddr;
 }
 
 void free_phypage(uint32_t phyaddr)
@@ -143,5 +193,21 @@ void free_phypage(uint32_t phyaddr)
 	phypage_free = target;
 	if(tmp == phypage_full)
 		phypage_full = next;
+}
+
+void free_space(HANDLE hProcess)
+{
+	struct PHYPAGE *tmp = phypage_full;
+	while(tmp != NULL)
+	{
+		struct PHYPAGE * wait_free = tmp;
+		tmp = tmp->next;
+		if(tmp->hOwner == hProcess)
+		{
+			free_phypage(wait_free->paddr);
+		}
+	}
+
+	udir_dirty[hProcess] = false;
 }
 

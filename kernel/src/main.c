@@ -3,7 +3,6 @@
 
 void init_page();
 void init_mm();
-void init_udir();
 void init_8259();
 void init_timer();
 void init_idt();
@@ -39,7 +38,6 @@ void init_cond()
 	init_video();
 	sti();
 
-	init_udir();
 	init_mm();
 	init_font();
 	load_game();
