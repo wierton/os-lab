@@ -196,6 +196,14 @@ static inline void write_cr3(uint32_t val)
 	asm volatile("movl %0, %%cr3"::"r"(val));
 }
 
+static inline void load_dir(PDE *pdir)
+{
+	CR3 cr3;
+	cr3.val = read_cr3();
+	cr3.page_directory_base = (((uint32_t)va_to_pa(pdir)) >> 12);
+	write_cr3(cr3.val);
+}
+
 static inline void cli()
 {
 	asm volatile("cli");

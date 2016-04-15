@@ -1,5 +1,7 @@
-#ifndef __EXEC_H__
-#define __EXEC_H__
+#ifndef __ELF_H__
+#define __ELF_H__
+
+#define DISK_START 102400
 
 /* Elf header definition */
 typedef struct {
@@ -30,5 +32,9 @@ typedef struct {
 	uint32_t p_flags;
 	uint32_t p_align;
 } Elf32_Phdr;
+
+uint32_t load_elf(HANDLE hProc, uint32_t disk_start);
+void set_usrtf(uint32_t eip, TrapFrame *tf);
+void env_run(TrapFrame *tf);
 
 #endif

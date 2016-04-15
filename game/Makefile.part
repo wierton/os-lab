@@ -14,8 +14,3 @@ $(game_FK_OBJ_DIR)/%.o: $(game_DAT_DIR)/%.dat
 game_EX_FILES_DEPENDED := $(game_DAT_OBJS) $(LIB_COMMON) $(LIB_APP)
 
 $(eval $(call make_common_rules,game,$(game_EX_CFLAGS),$(game_EX_LDFLAGS),$(game_EX_FILES_DEPENDED)))
-
-.PHNOY: clean-game
-
-clean-game:
-	@rm -rf $(game_OBJ_DIR)

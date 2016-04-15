@@ -19,8 +19,3 @@ $(boot_IMG): $(boot_BIN) $(load_BIN)
 	@bash fill.sh $(boot_O) 512
 	@bash fill.sh $(load_O) 4096
 	@cat $(boot_O) $(load_O) > $(boot_IMG)
-
-.PHONY: clean-boot
-
-clean-boot:
-	@rm -rf $(boot_OBJ_DIR) $(load_OBJ_DIR)

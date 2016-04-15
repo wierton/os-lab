@@ -2,7 +2,7 @@
 #include "math.h"
 #include "x86/x86.h"
 #include "x86/memory.h"
-#include "process/process.h"
+#include "proc/proc.h"
 
 #define NRT 1024
 #define NR_PUTAB 64
@@ -37,6 +37,12 @@ HANDLE apply_udir()
 	}
 	assert(0);
 	return INVALID_HANDLE_VALUE;
+}
+
+PDE *get_udir(HANDLE hProcess)
+{
+	assert(hProcess < NR_PROCESS);
+	return pudir[hProcess];
 }
 
 PTE *apply_utab()
@@ -91,13 +97,16 @@ HANDLE mm_alloc(HANDLE hProcess, uint32_t vaddr, uint32_t size)
 	return hProcess;
 }
 
-void load_udir(HANDLE hProgress)
+PDE *load_udir(HANDLE hProgress)
 {
 	assert(hProgress < NR_PROCESS);
 	CR3 cr3;
+	PDE *old_pdir;
 	cr3.val = read_cr3();
+	old_pdir = (void *)(pa_to_va(cr3.page_directory_base << 12));
 	cr3.page_directory_base = (((uint32_t)va_to_pa(pudir[hProgress])) >> 12);
 	write_cr3(cr3.val);
+	return old_pdir;
 }
 
 void init_udir()

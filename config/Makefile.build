@@ -46,6 +46,18 @@ else
 	@$(7)
 endif
 
+.PHONY: $(1)-asm $(1)-elf clean-$(1)
+
+$(1)-asm:$$($(1)_BIN)
+	@objdump -d $$($(1)_BIN) > $$($(1)_BIN).S
+	@vim $$($(1)_BIN).S
+
+$(1)-elf:$$($(1)_BIN)
+	@readelf -a $$($(1)_BIN) > $$($(1)_BIN).elf
+	@vim $$($(1)_BIN).elf
+
+clean-$(1):
+	@rm -rf $$($(1)_OBJ_DIR)
+
 -include $$($(1)_OBJS:.o=.d)
 endef
-

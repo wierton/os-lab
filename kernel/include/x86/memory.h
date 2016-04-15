@@ -37,6 +37,6 @@ static inline uint32_t make_usr_pte(uint32_t addr)
 
 HANDLE apply_udir();
 HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size);
-void load_udir(HANDLE hProgress);
+PDE *load_udir(HANDLE hProgress);
 
 #endif

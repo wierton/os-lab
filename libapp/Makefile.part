@@ -4,8 +4,3 @@ libapp_SPEC_LDFLAGS := ar r $$(libapp_BIN) $$(libapp_OBJS)
 $(eval $(call make_common_rules,libapp,$(libapp_EX_CFLAGS),,,,,$(libapp_SPEC_LDFLAGS)))
 
 LIB_APP := $(libapp_BIN)
-
-.PHNOY: clean-libapp
-
-clean-libapp:
-	@rm -rf $(libapp_OBJ_DIR)

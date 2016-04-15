@@ -4,8 +4,3 @@ libcommon_SPEC_LDFLAGS := ar r $$(libcommon_BIN) $$(libcommon_OBJS)
 $(eval $(call make_common_rules,libcommon,$(libcommon_EX_CFLAGS),,,,,$(libcommon_SPEC_LDFLAGS)))
 
 LIB_COMMON := $(libcommon_BIN)
-
-.PHNOY: clean-libcommon
-
-clean-libcommon:
-	@rm -rf $(libcommon_OBJ_DIR)

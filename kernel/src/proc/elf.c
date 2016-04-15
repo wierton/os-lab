@@ -2,13 +2,10 @@
 #include "x86/x86.h"
 #include "x86/memory.h"
 #include "device/disk.h"
-#include "process/exec.h"
+#include "proc/elf.h"
+#include "proc/proc.h"
 
-#define DISK_START 102400
-#define GAME_STACK_ADDR 0x50000000
-#define GAME_STACK_SIZE (1 << 22)
-
-uint32_t load_elf(uint32_t disk_start)
+uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
 {
 	int i, j;
 	Elf32_Endr elf;
@@ -17,14 +14,12 @@ uint32_t load_elf(uint32_t disk_start)
 	assert(elf.e_phnum < 10 && elf.e_phentsize == sizeof(Elf32_Phdr));
 	read_disk(((uint32_t)ph), disk_start + elf.e_phoff, elf.e_phnum * elf.e_phentsize);
 
-	HANDLE hGame = apply_udir();
-	mm_alloc(hGame, GAME_STACK_ADDR - GAME_STACK_SIZE, GAME_STACK_SIZE);
-	load_udir(hGame);
+	mm_alloc(hProc, USER_STACK_ADDR - USER_STACK_SIZE, USER_STACK_SIZE);
 
 	/* load into memory */
 	for(i = 0; i < elf.e_phnum; i++)
 	{
-		mm_alloc(hGame, ph[i].p_vaddr, ph[i].p_memsz);
+		mm_alloc(hProc, ph[i].p_vaddr, ph[i].p_memsz);
 		for(j = ph[i].p_vaddr; j < ph[i].p_vaddr + ph[i].p_memsz; j += 4)
 		{
 			/* make sure it can be read and write */
@@ -44,12 +39,8 @@ uint32_t load_elf(uint32_t disk_start)
 	return elf.e_entry;
 }
 
-void load_game()
+void set_usrtf(uint32_t eip, TrapFrame *tf)
 {
-	uint32_t eip = load_elf(DISK_START);
-	/* construct trapframe */
-	TrapFrame *tf = (void *)GAME_STACK_ADDR - sizeof(TrapFrame);
-
 	/* pop */
 	tf->ds = 0x20 | 0x3;
 	tf->es = 0x20 | 0x3;
@@ -58,13 +49,22 @@ void load_game()
 	tf->cs = 0x18 | 0x3;
 	tf->eip = eip;
 	/* cross rings */
-	tf->esp = GAME_STACK_ADDR - 4;
+	tf->esp = USER_STACK_ADDR;
 	tf->ss = 0x20 | 0x3;
+}
 
+void env_run(TrapFrame *tf)
+{
 	asm volatile("movl %0, %%esp;"
 			"popal;"
 			"popl %%es;"
 			"popl %%ds;"
 			"addl $8, %%esp;"
 			"iret;"::"r"(tf));
+}
+
+void load_game()
+{
+	HANDLE hGame = create_proc(DISK_START);
+	enter_proc(hGame);
 }
