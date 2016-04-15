@@ -13,6 +13,8 @@ void init_disk();
 void init_font();
 void test_printk();
 void init_segment();
+void init_proc();
+void init_thread();
 void load_game();
 
 void init_cond();
@@ -39,6 +41,8 @@ void init_cond()
 	sti();
 
 	init_mm();
+	init_proc();
+	init_thread();
 	init_font();
 	load_game();
 	while(1);

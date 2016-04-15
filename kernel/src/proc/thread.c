@@ -10,7 +10,8 @@ HANDLE apply_udir();
 PDE *get_udir(HANDLE);
 PDE *load_udir(HANDLE);
 
-uint32_t cur_esp, cur_handle;
+uint32_t cur_esp, cur_thread;
+uint32_t tmp_stack[4096];
 
 void add_wait(HANDLE hThread)
 {
@@ -73,7 +74,7 @@ void add_block(HANDLE hThread)
 void init_thread()
 {
 	//TODO:init the thread control blocks
-	cur_esp = 0;
+	cur_esp = (uint32_t)(tmp_stack) + 4096;
 
 	int i;
 	for(i = 0; i < NR_THREAD; i++)
@@ -96,22 +97,23 @@ HANDLE apply_th()
 	return INVALID_HANDLE_VALUE;
 }
 
-HANDLE create_thread(HANDLE hProc, uint32_t entry, ThreadPriority tp)
+HANDLE create_thread(HANDLE hProc, ThreadAttr *pta)
 {
 	/* apply a thread handle */
 	HANDLE hThread = apply_th();
 
 	/* init the tcb info */
-	tcb[hThread].tf.eip = entry;
-	tcb[hThread].tp = tp;
+	tcb[hThread].tf.eip = pta->entry;
+	tcb[hThread].kesp = (uint32_t)(tcb[hThread].stack) + USER_KSTACK_SIZE;
+	tcb[hThread].tp = pta->thread_prior;
 	tcb[hThread].tid = hThread;
-	tcb[hThread].ptid = -1;
+	tcb[hThread].ptid = pta->ptid;
 	tcb[hThread].ppid = hProc;
 	tcb[hThread].state = TS_WAIT;
 	tcb[hThread].timescales = 0;
 
 	/* construct pesudo trapframe */
-	set_usrtf(entry, &tcb[hThread].tf);
+	set_usrtf(pta->entry, &tcb[hThread].tf);
 
 	/* add this thread to wait queue */
 	add_wait(hThread);
@@ -123,6 +125,10 @@ HANDLE create_thread(HANDLE hProc, uint32_t entry, ThreadPriority tp)
 void enter_thread(HANDLE hThread)
 {
 	assert(hThread < NR_THREAD);
+
+	/* record current context information */
+	cur_thread = hThread;
+	cur_esp = tcb[hThread].kesp;
 	
 	tcb[hThread].state = TS_RUN;
 	void *tf = (void *)USER_STACK_ADDR - sizeof(TrapFrame);

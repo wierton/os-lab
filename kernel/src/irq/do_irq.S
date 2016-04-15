@@ -22,14 +22,27 @@
 .global irq_empty;
 			 irq_empty:	 pushl $0;  pushl	$-1; jmp do_irq
 
+.extern cur_esp
+.comm old_esp, 4, 4
 .global do_irq
 do_irq:
 	pushl %ds;
 	pushl %es;
 	pushal;
-	pushl %esp;
+
+	# switch stack
+	movl %esp, %eax;
+	movl %eax, old_esp;
+	movl cur_esp, %esp;
+
+	# call irq_handle
+	pushl %eax;
 	call irq_handle;
 	addl $0x4, %esp;
+
+	# switch stack
+	movl old_esp, %esp;
+
 	popal;
 	addl $16, %esp;
 	iret;

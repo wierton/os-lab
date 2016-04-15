@@ -49,7 +49,11 @@ HANDLE create_proc(uint32_t disk_off)
 	load_dir(old_pdir);
 
 	/* create main thread for this process */
-	pcb[hProc].hMainThread = create_thread(hProc, eip, TP_3);
+	ThreadAttr ta;
+	ta.entry = eip;
+	ta.thread_prior = TP_3;
+	ta.ptid = NULL_PTID;
+	pcb[hProc].hMainThread = create_thread(hProc, &ta);
 
 	return hProc;
 }
@@ -58,8 +62,12 @@ HANDLE create_proc(uint32_t disk_off)
 void enter_proc(HANDLE hProc)
 {
 	/* enter main thread */
+	/* load process dir */
 	load_udir(hProc);
+
+	/* mark process state */
 	pcb[hProc].state = PS_RUN;
-	load_udir(hProc);
+
+	/* enter main thread of this process */
 	enter_thread(pcb[hProc].hMainThread);
 }
