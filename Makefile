@@ -1,10 +1,9 @@
-.PHNOY: count run clean boot game kernel lib submit gdb debug
+.PHNOY: count run clean boot game kernel lib submit gdb debug test
 
 CC := gcc-4.9 # this version is ok
 LD := ld
 QEMU := qemu-system-i386
 IMG := disk.img
-info := not found: gcc version 4.9.3 (Ubuntu 4.9.3-5ubuntu1)
 LIB_COMMON_DIR := libcommon/include
 LIB_APP_DIR := libapp/include
 
@@ -19,13 +18,22 @@ include game/Makefile.part
 include boot/Makefile.part
 include kernel/Makefile.part
 
+# some testcase here
+
+TESTCASE := fork
+
+include testcase/Makefile.part
+
 boot	: $(boot_IMG)
 game	: $(game_BIN)
 kernel	: $(kernel_BIN)
+test	: $(test_BIN)
 lib		: $(LIB_COMMON) $(LIB_APP)
 
-$(IMG): $(boot_IMG) $(kernel_BIN) $(game_BIN)
-	@cat $(boot_IMG) $(kernel_BIN) $(game_BIN) > $(IMG)
+ENTRY := $(test_BIN)
+
+$(IMG): $(boot_IMG) $(kernel_BIN) $(ENTRY)
+	@cat $(boot_IMG) $(kernel_BIN) $(ENTRY) > $(IMG)
 
 debug: $(IMG)
 	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
@@ -45,4 +53,5 @@ count:
 	@find . -name "*.c" -or -name "*.h" -or -name "Makefile*" | xargs cat | wc -l
 
 submit: clean
+	@git push
 	@cd .. && tar cvj $(shell pwd | grep -o '[^/]*$$') > 141242068.tar.bz2

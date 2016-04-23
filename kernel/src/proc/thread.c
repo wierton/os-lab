@@ -10,7 +10,8 @@ HANDLE apply_udir();
 PDE *get_udir(HANDLE);
 PDE *load_udir(HANDLE);
 
-uint32_t cur_esp, cur_thread;
+uint32_t cur_esp;
+uint32_t cur_thread, cur_proc;
 uint32_t tmp_stack[4096];
 
 void add_wait(HANDLE hThread)
@@ -128,6 +129,7 @@ void enter_thread(HANDLE hThread)
 
 	/* record current context information */
 	cur_thread = hThread;
+	cur_proc = tcb[hThread].ppid;
 	cur_esp = tcb[hThread].kesp;
 	
 	tcb[hThread].state = TS_RUN;
@@ -138,6 +140,43 @@ void enter_thread(HANDLE hThread)
 
 void switch_thread(TrapFrame *tf)
 {
-	/* TODO: choose a thread from wait queue by priority */
+	/* TODO: choose a thread from wait queue by priority
+	 * save current thread's trapframe :
+	 *		memcpy(cur_thread.tf, tf, sizeof(tf))
+	 * load new thread's trapframe :
+	 *		memcpy(tf, new_thread.tf, sizeof(tf))
+	 * set cur_esp and cur_handle
+	 */
+
+	tcb[cur_thread].timescales ++;
+	pcb_time_plus(cur_proc);
+
+	HANDLE new_thread = cur_thread;
+	TCB *tmp = tq_wait;
+	while(tmp != NULL)
+	{
+		if(tmp->tp > tcb[cur_thread].tp)
+		{
+			new_thread = tcb[cur_thread].tid;
+			break;
+		}
+		tmp = tmp->next;
+	}
+
+	if(new_thread != cur_thread)
+	{
+		cur_proc = tcb[new_thread].ppid;
+		memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
+		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
+	}
 	
 }
+
+/* new syscall:
+ * 1. fork()
+ * 2. pthread_t(FuncEntry)
+ * 3. join() // block current thread
+ * 4. wait(hThread)
+ * 5. sleep(ms);
+ * 6. exit();
+ */

@@ -30,7 +30,7 @@ do_irq:
 	pushl %es;
 	pushal;
 
-	# switch stack
+	# switch to user's kernel stack
 	movl %esp, %eax;
 	movl %eax, old_esp;
 	movl cur_esp, %esp;
@@ -40,7 +40,7 @@ do_irq:
 	call irq_handle;
 	addl $0x4, %esp;
 
-	# switch stack
+	# switch back to user's stack
 	movl old_esp, %esp;
 
 	popal;

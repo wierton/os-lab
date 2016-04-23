@@ -4,6 +4,7 @@
 void timer_event();
 void keyboard_event(uint32_t);
 void do_syscall(TrapFrame *tf);
+void switch_thread(TrapFrame *tf);
 
 void irq_handle(TrapFrame *tf)
 {
@@ -22,6 +23,7 @@ void irq_handle(TrapFrame *tf)
 	else if(tf->irq == 1000)
 	{
 		timer_event();
+		switch_thread(tf);
 	}
 	else if(tf->irq == 1001)
 	{

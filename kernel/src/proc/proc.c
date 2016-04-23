@@ -12,6 +12,12 @@ PDE *load_udir(HANDLE);
 
 static PCB pcb[NR_PROCESS];
 
+void pcb_time_plus(HANDLE hProc)
+{
+	assert(hProc < NR_PROCESS);
+	pcb[hProc].timescales ++;
+}
+
 void init_proc()
 {
 	int i;
@@ -40,6 +46,10 @@ HANDLE create_proc(uint32_t disk_off)
 	
 	/* apply available process handle */
 	HANDLE hProc = apply_ph();
+
+	/* init state of cur_proc */
+	pcb[hProc].timescales = 0;
+	pcb[hProc].ppid = 0;
 
 	/* load this thread's page directory */
 	PDE *old_pdir = load_udir(hProc);

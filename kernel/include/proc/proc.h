@@ -18,6 +18,7 @@ typedef struct tagPCB {
 } PCB;
 
 HANDLE apply_ph();
+void pcb_time_plus(HANDLE hProc);
 HANDLE create_proc(uint32_t disk_off);
 void enter_proc(HANDLE hProc);
 void switch_proc(TrapFrame *tf);
