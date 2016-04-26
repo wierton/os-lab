@@ -5,6 +5,11 @@
 #include "proc/elf.h"
 #include "proc/proc.h"
 
+#define NR_MEMH 200
+
+static MEMH memh[NR_MEMH];
+static uint32_t nr_memh = 0;
+
 uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
 {
 	int i, j;
@@ -19,6 +24,7 @@ uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
 	/* load into memory */
 	for(i = 0; i < elf.e_phnum; i++)
 	{
+		memh[i + nr_memh] = make_memh(ph[i].p_vaddr, ph[i].p_paddr, ph[i].p_memsz);
 		mm_alloc(hProc, ph[i].p_vaddr, ph[i].p_memsz);
 		for(j = ph[i].p_vaddr; j < ph[i].p_vaddr + ph[i].p_memsz; j += 4)
 		{

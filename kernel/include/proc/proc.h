@@ -11,10 +11,25 @@
 /* proc state */
 enum {PS_RUN, PS_WAIT, PS_BLOCKED, PS_UNALLOCED};
 
+typedef struct {
+	uint32_t p_vaddr, p_paddr, p_memsz;
+} MEMH;
+
+static inline MEMH make_memh(uint32_t x, uint32_t y, uint32_t z)
+{
+	MEMH tmp;
+	tmp.p_vaddr = x;
+	tmp.p_paddr = y;
+	tmp.p_memsz = z;
+	return tmp;
+}
+
 typedef struct tagPCB {
 	int pid, ppid, timescales, state;
 	PDE *pudir;
 	HANDLE hMainThread;
+	uint32_t pm_num;
+	MEMH *pm;
 } PCB;
 
 HANDLE apply_ph();
