@@ -26,6 +26,7 @@
 .comm old_esp, 4, 4
 .global do_irq
 do_irq:
+	cli
 	pushl %ds;
 	pushl %es;
 	pushal;
@@ -45,5 +46,6 @@ do_irq:
 
 	popal;
 	addl $16, %esp;
+	sti
 	iret;
 

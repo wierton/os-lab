@@ -8,7 +8,7 @@ typedef int(* SYSCALL_FUN)(TrapFrame *tf);
 SYSCALL_FUN syscall_fun[NR_SYSCALL] = 
 {
 /* 00 */ flip_screen, read_key, time, user_abort,
-/* 04 */ inv, inv, inv, inv,
+/* 04 */ inv, inv, fork, inv,
 /* 08 */ sys_printc, sys_prints, inv, inv,
 /* 0b */ inv, inv, inv, inv,
 /* 10 */ inv, inv, inv, inv,

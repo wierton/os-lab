@@ -4,14 +4,17 @@
 
 int main()
 {
-	int i = 0;
-	if(fork() == -1)
+	printf("\033[1;31mGame Start.\033[0m\n");
+	int i = 0, ret = fork();
+	printf("game:{%d}\n", ret);
+	if(ret == -1)
 	{
 		while(1)
 		{
 			printf("Ping!\n");
 			while(i ++ < 1000000);
 			i = 0;
+			assert(0);
 		}
 	}
 	else
@@ -21,6 +24,7 @@ int main()
 			printf("Pong!\n");
 			while(i ++ < 1000000);
 			i = 0;
+			assert(0);
 		}
 	}
 	return 0;

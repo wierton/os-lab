@@ -4,7 +4,7 @@
 #include "proc/elf.h"
 #include "proc/proc.h"
 
-static TCB tcb[NR_THREAD], *tq_wait, *tq_blocked;
+static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 
 HANDLE apply_udir();
 PDE *get_udir(HANDLE);
@@ -13,6 +13,30 @@ PDE *load_udir(HANDLE);
 uint32_t cur_esp;
 uint32_t cur_thread, cur_proc;
 uint32_t tmp_stack[4096];
+
+void show_queue(int id)
+{
+	TCB *tmp = NULL;
+
+	if(id == -1)
+	{
+		printk("running: (%d, %d)\n", cur_thread, cur_proc);
+		return;
+	}
+
+	if(id == 0)
+		tmp = tq_wait;
+	else
+		tmp = tq_blocked;
+
+	printk("%s chain:", id ? "blocked" : "wait");
+	while(tmp != NULL)
+	{
+		printk("(%d, %d) -- ", tmp->tid, tmp->ppid);
+		tmp = tmp->next;
+	}
+	printk("\n");
+}
 
 void add_run(HANDLE hThread)
 {
@@ -25,23 +49,37 @@ void add_run(HANDLE hThread)
 
 	/* remove from wait queue */
 	TCB *tmp = tq_wait;
-	while(tmp != NULL && tmp->next != &tcb[hThread])
+	if(tmp->tid == hThread)
 	{
-		tmp = tmp->next;
+		tq_wait = tq_wait->next;
 	}
+	else
+	{
+		while(tmp != NULL && tmp->next->tid != hThread)
+		{
+			tmp = tmp->next;
+		}
 
-	if(tmp)
-		tmp->next = tcb[hThread].next;
+		if(tmp)
+			tmp->next = tcb[hThread].next;
+	}
 
 	/* remove from blocked queue */
 	tmp = tq_blocked;
-	while(tmp != NULL && tmp->next != &tcb[hThread])
+	if(tmp->tid == hThread)
 	{
-		tmp = tmp->next;
+		tq_blocked = tq_blocked->next;
 	}
+	else
+	{
+		while(tmp != NULL && tmp->next != &tcb[hThread])
+		{
+			tmp = tmp->next;
+		}
 
-	if(tmp)
-		tmp->next = tcb[hThread].next;
+		if(tmp)
+			tmp->next = tcb[hThread].next;
+	}
 
 	tcb[hThread].next = NULL;
 }
@@ -137,6 +175,8 @@ void init_thread()
 	//TODO:init the thread control blocks
 	cur_esp = (uint32_t)(tmp_stack) + 4096;
 
+	tq_wait = tq_blocked = NULL;
+
 	int i;
 	for(i = 0; i < NR_THREAD; i++)
 	{
@@ -196,6 +236,12 @@ void enter_thread(HANDLE hThread)
 	env_run(tf);
 }
 
+void update_eip(HANDLE hThread, uint32_t eip)
+{
+	assert(hThread < NR_THREAD);
+	tcb[hThread].tf.eip = eip;
+}
+
 void switch_thread(TrapFrame *tf)
 {
 	/* TODO: choose a thread from wait queue by priority
@@ -207,6 +253,7 @@ void switch_thread(TrapFrame *tf)
 	 */
 
 	tcb[cur_thread].timescales ++;
+	tcb[cur_thread].tf.eip = tf->eip;
 	pcb_time_plus(cur_proc);
 
 	HANDLE new_thread = cur_thread;
@@ -223,12 +270,13 @@ void switch_thread(TrapFrame *tf)
 
 	if(new_thread != cur_thread)
 	{
+		uint32_t old_thread = cur_thread;
 		add_wait(cur_thread);
 		add_run(new_thread);
 		/* store TrapFrame information */
-		memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
+		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
 		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
-		printk("%d, ", tcb[new_thread].ppid);
+
 		load_udir(tcb[new_thread].ppid);
 	}
 	
@@ -260,10 +308,13 @@ void copy_thread_tree(HANDLE hSrc, HANDLE hDst)
 			if(i == cur_thread)
 			{
 				tcb[hnew].tf.eax = -1;
+				tcb[i].tf.eax = hDst;
+				printk("\n==[%d, %x, %x]==\n", hnew, tcb[hnew].tf.eip, tcb[i].tf.eip);
 			}
 		}
 	}
 }
+
 /* new syscall:
  * 1. fork()
  * 2. pthread_t(FuncEntry)

@@ -11,3 +11,11 @@ void abort(const char *file, int line)
 	draw_str(0, 10, 0, 1, sztext);
 	asm volatile("cli;hlt");
 }
+
+void poweroff()
+{
+	draw_rect(0, 0, SCR_W, SCR_H, make_rgb(0, 0, 0));
+	sprintk(sztext, "poweroff ...");
+	draw_str(0, 10, 0xffffffff, 2, sztext);
+	asm volatile("cli;hlt");
+}

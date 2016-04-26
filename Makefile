@@ -20,7 +20,8 @@ include kernel/Makefile.part
 
 # some testcase here
 
-TESTCASE := fm
+# TESTCASE := fm
+TESTCASE := fork
 
 include testcase/Makefile.part
 

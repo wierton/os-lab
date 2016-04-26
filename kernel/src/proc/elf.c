@@ -7,6 +7,8 @@
 
 #define NR_MEMH 200
 
+void set_memh(HANDLE hProc, uint32_t pm_num, MEMH *pm);
+
 static MEMH memh[NR_MEMH];
 static uint32_t nr_memh = 0;
 
@@ -32,6 +34,10 @@ uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
 			((uint32_t *)j)[0] = j;
 		}
 	}
+
+	set_memh(hProc, elf.e_phnum, &memh[nr_memh]);
+	nr_memh += elf.e_phnum;
+	assert(nr_memh < NR_MEMH);
 
 	for(i = 0; i < elf.e_phnum; i++)
 	{

@@ -3,6 +3,7 @@
 
 void abort(const char *file, int line);
 
+int fork(TrapFrame *tf);
 int sys_printc(TrapFrame *tf);
 int sys_prints(TrapFrame *tf);
 int flip_screen(TrapFrame *tf);
