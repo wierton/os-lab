@@ -6,6 +6,7 @@ typedef void (*PRINTER)(char);
 
 void printc(char ch)
 {
+	syscall(8, ch);
 }
 
 void sprintc(char ch)

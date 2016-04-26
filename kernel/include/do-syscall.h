@@ -3,6 +3,8 @@
 
 void abort(const char *file, int line);
 
+int sys_printc(TrapFrame *tf);
+int sys_prints(TrapFrame *tf);
 int flip_screen(TrapFrame *tf);
 int read_key(TrapFrame *tf);
 int time(TrapFrame *tf);

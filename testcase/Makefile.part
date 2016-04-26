@@ -9,7 +9,7 @@ test_SOBJS := $(patsubst $(test_SRC_DIR)/%.S, $(test_OBJ_DIR)/%.o, $(test_SFILES
 
 test_OBJS := $(test_SOBJS) $(test_COBJS)
 
-test_CFLAGS := -O0 -I$(test_INC_DIR) -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
+test_CFLAGS := -c -m32 -Wall -Werror -MMD -fno-builtin -fno-stack-protector -O0 -I$(test_INC_DIR) -I$(LIB_COMMON_DIR) -I$(LIB_APP_DIR)
 test_LDFLAGS := -m elf_i386 -e _start
 
 test_BIN := obj/testcase/testcase
@@ -17,7 +17,7 @@ test_BIN := obj/testcase/testcase
 $(test_OBJ_DIR)/%.o:$(test_SRC_DIR)/%.[cS]
 	@mkdir -p $(@D)
 	@echo + $<
-	@$(CC) -c $< -o $@
+	@$(CC) $(test_CFLAGS) $< -o $@
 
 $(test_BIN): $(test_OBJS) $(LIB_COMMON) $(LIB_APP)
 	@mkdir -p $(@D)
