@@ -234,9 +234,9 @@ void switch_thread(TrapFrame *tf)
 	
 }
 
-void copy_thread_tree(HANDLE hSrc, HANDLE hDst, HANDLE hCurThread)
+void copy_thread_tree(HANDLE hSrc, HANDLE hDst)
 {
-	assert(hCurThread < NR_THREAD);
+	assert(cur_thread < NR_THREAD);
 
 	int i;
 	for(i = 0; i < NR_THREAD; i++)
@@ -257,7 +257,7 @@ void copy_thread_tree(HANDLE hSrc, HANDLE hDst, HANDLE hCurThread)
 				add_block(hnew);
 			}
 
-			if(i == hCurThread)
+			if(i == cur_thread)
 			{
 				tcb[hnew].tf.eax = -1;
 			}

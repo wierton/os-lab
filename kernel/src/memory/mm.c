@@ -220,3 +220,46 @@ void free_space(HANDLE hProcess)
 	udir_dirty[hProcess] = false;
 }
 
+uint32_t page_translate(HANDLE hProc, uint32_t vaddr)
+/* translate given addr from virtual addr to physical addr */
+{
+	/* for given hProc, pagedir baseaddr is pudir[hProc],
+	 * we can get page table base addr by pudir[hProc][vaddr:pdir]
+	 * */
+	assert(hProc < NR_PROCESS);
+	PDE pdir = pudir[hProc][(vaddr >> 22) & 0x3ff];
+	PTE ptab;
+
+	uint32_t phyoff = vaddr & 0xfff;
+	uint32_t pagetab = (vaddr >> 12) & 0x3ff;
+	
+	if(!pdir.present)
+	{
+		return 0xffffffff;
+	}
+
+	/* read page table */
+	ptab.val = ((uint32_t *)((uint32_t)pa_to_va(pdir.page_frame << 12) | pagetab * 4))[0];
+	if(!ptab.present)
+	{
+		return 0xffffffff;
+	}
+
+	/* calc physic address */
+	return (ptab.page_frame << 12) | phyoff;
+}
+
+void copy_phypage(HANDLE hSrc, HANDLE hDst, uint32_t vaddr)
+{
+	/* operation below assume that base addr 
+	 * in segmention transformation is zero */
+	uint32_t src = (page_translate(hSrc, vaddr) & (0xfffff000));
+	uint32_t dst = (page_translate(hDst, vaddr) & (0xfffff000));
+
+	int i;
+	for(i = 0; i < PAGE_SIZE; i++)
+	{
+	//	printk("[%d, %d] ", dst, src);
+		((uint32_t *)(dst + i))[0] = ((uint32_t *)(src + i))[0];
+	}
+}
