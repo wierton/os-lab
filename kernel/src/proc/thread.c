@@ -3,6 +3,10 @@
 #include "x86/x86.h"
 #include "proc/elf.h"
 #include "proc/proc.h"
+#include "device/time.h"
+
+#define Q_WAIT  1
+#define Q_BLOCK 2
 
 static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 
@@ -13,6 +17,30 @@ PDE *load_udir(HANDLE);
 uint32_t cur_esp;
 uint32_t cur_thread, cur_proc;
 uint32_t tmp_stack[4096];
+
+typedef struct {
+	uint32_t tid, dirty;
+	int tartime;
+} TIMELOCK;
+
+#define NR_TIMELOCK 16
+
+TIMELOCK timelock[NR_TIMELOCK];
+
+uint32_t apply_timelock()
+{
+	int i;
+	for(i = 0; i < NR_TIMELOCK; i++)
+	{
+		if(!timelock[i].dirty)
+		{
+			timelock[i].dirty = 1;
+			return i;
+		}
+	}
+	assert(0);
+	return 0xffffffff;
+}
 
 void show_queue(int id)
 {
@@ -29,13 +57,106 @@ void show_queue(int id)
 	else
 		tmp = tq_blocked;
 
-	printk("%s chain:", id ? "blocked" : "wait");
+	printk("%s chain(tid, ppid):", id ? "blocked" : "wait");
 	while(tmp != NULL)
 	{
-		printk("(%d, %d) -- ", tmp->tid, tmp->ppid);
+		printk("(%d, %d, %d) -- ", tmp->state, tmp->tid, tmp->ppid);
 		tmp = tmp->next;
 	}
 	printk("\n");
+}
+
+void show_tid()
+{
+	int i = 0;
+	for(i = 0; i < 3; i++)
+	{
+		printk("/%d, %d, %d/", i, tcb[i].tid, tcb[i].ppid);
+	}
+	printk("\n");
+}
+
+void rm_queue(HANDLE hThread, uint32_t queue)
+{
+	TCB **prm = NULL;
+	switch(queue)
+	{
+		case Q_WAIT:
+			prm = &tq_wait;
+			break;
+		case Q_BLOCK:
+			prm = &tq_blocked;
+			break;
+		default:assert(0);break;
+	}
+
+	assert(hThread < NR_THREAD);
+
+	/* remove from rm queue */
+	if(*prm == &tcb[hThread])
+	{
+		*prm = tcb[hThread].next;
+	}
+	else if(*prm != NULL)
+	{
+		TCB *tmp = *prm;
+		while(tmp->next != NULL && tmp->next != &tcb[hThread])
+		{
+			tmp = tmp->next;
+		}
+
+		if(tmp->next != NULL)
+			tmp->next = tcb[hThread].next;
+	}
+}
+
+void add_queue(HANDLE hThread, uint32_t queue)
+{
+	TCB **ptar = NULL;
+	uint32_t ts_tar = -1, q_rm = -1;
+	switch(queue)
+	{
+		case Q_WAIT:
+			ptar = &tq_wait;
+			q_rm = Q_BLOCK;
+			ts_tar = TS_WAIT;
+			break;
+		case Q_BLOCK:
+			ptar = &tq_blocked;
+			q_rm = Q_WAIT;
+			ts_tar = TS_BLOCKED;
+			break;
+		default:assert(0);break;
+	}
+
+	assert(hThread < NR_THREAD);
+
+	if(tcb[hThread].state == ts_tar)
+	{
+		assert(0);
+	}
+
+	/* remove from rm queue */
+	rm_queue(hThread, q_rm);
+	tcb[hThread].state = ts_tar;
+
+	/* add to tar queue */
+	if(*ptar == NULL)
+	{
+		*ptar = &(tcb[hThread]);
+		tcb[hThread].next = NULL;
+	}
+	else
+	{
+		TCB *tmp = *ptar;
+		while(tmp->next != NULL && tmp->next->tp <= tcb[hThread].tp)
+		{
+			tmp = tmp->next;
+		}
+
+		tcb[hThread].next = tmp->next;
+		tmp->next = &(tcb[hThread]);
+	}
 }
 
 void add_run(HANDLE hThread)
@@ -84,92 +205,6 @@ void add_run(HANDLE hThread)
 	tcb[hThread].next = NULL;
 }
 
-void add_wait(HANDLE hThread)
-{
-	assert(hThread < NR_THREAD);
-
-	if(tcb[hThread].state == TS_UNALLOCED)
-		assert(0);
-
-	if(tcb[hThread].state == TS_WAIT)
-		return;
-
-	if(tcb[hThread].state == TS_BLOCKED)
-	{
-		/* remove from blocked queue */
-		TCB *tmp = tq_blocked;
-		assert(tmp != NULL);
-		while(tmp->next != &tcb[hThread])
-		{
-			tmp = tmp->next;
-		}
-
-		tmp->next = tcb[hThread].next;
-	}
-
-	/* add to wait queue */
-	TCB *tmp = tq_wait;
-	if(tmp == NULL)
-	{
-		tq_wait = &(tcb[hThread]);
-		tcb[hThread].next = NULL;
-	}
-	else
-	{
-		while(tmp->next != NULL && tmp->next->tp <= tcb[hThread].tp)
-		{
-			tmp = tmp->next;
-		}
-
-		tcb[hThread].state = TS_WAIT;
-		tcb[hThread].next = tmp->next;
-		tmp->next = &(tcb[hThread]);
-	}
-}
-
-void add_block(HANDLE hThread)
-{
-	assert(hThread < NR_THREAD);
-
-	if(tcb[hThread].state == TS_UNALLOCED)
-		assert(0);
-
-	if(tcb[hThread].state == TS_BLOCKED)
-		return;
-
-	if(tcb[hThread].state == TS_WAIT)
-	{
-		/* remove from wait queue */
-		TCB *tmp = tq_wait;
-		assert(tmp != NULL);
-		while(tmp->next != &tcb[hThread])
-		{
-			tmp = tmp->next;
-		}
-
-		tmp->next = tcb[hThread].next;
-	}
-
-	/* add to wait queue */
-	TCB *tmp = tq_blocked;
-	if(tmp == NULL)
-	{
-		tq_blocked = &(tcb[hThread]);
-		tcb[hThread].next = NULL;
-	}
-	else
-	{
-		while(tmp->next != NULL && tmp->next->tp <= tcb[hThread].tp)
-		{
-			tmp = tmp->next;
-		}
-
-		tcb[hThread].state = TS_BLOCKED;
-		tcb[hThread].next = tmp->next;
-		tmp->next = &(tcb[hThread]);
-	}
-}
-
 void init_thread()
 {
 	//TODO:init the thread control blocks
@@ -180,7 +215,12 @@ void init_thread()
 	int i;
 	for(i = 0; i < NR_THREAD; i++)
 	{
+		tcb[i].tid = i;
+		tcb[i].ptid = -1;
+		tcb[i].ppid = -1;
 		tcb[i].state = TS_UNALLOCED;
+		tcb[i].timescales = 0;
+		tcb[i].tartime = -1;
 		tcb[i].next = NULL;
 		tcb[i].kesp = (uint32_t)(tcb[i].stack) + USER_KSTACK_SIZE;
 	}
@@ -208,17 +248,14 @@ HANDLE create_thread(HANDLE hProc, ThreadAttr *pta)
 	tcb[hThread].tf.eip = pta->entry;
 	tcb[hThread].kesp = (uint32_t)(tcb[hThread].stack) + USER_KSTACK_SIZE;
 	tcb[hThread].tp = pta->thread_prior;
-	tcb[hThread].tid = hThread;
 	tcb[hThread].ptid = pta->ptid;
 	tcb[hThread].ppid = hProc;
-	tcb[hThread].state = TS_WAIT;
 	tcb[hThread].timescales = 0;
+	/* add this thread to wait queue */
+	add_queue(hThread, Q_WAIT);
 
 	/* construct pesudo trapframe */
 	set_usrtf(pta->entry, &tcb[hThread].tf);
-
-	/* add this thread to wait queue */
-	add_wait(hThread);
 	
 	return hThread;
 }
@@ -236,50 +273,28 @@ void enter_thread(HANDLE hThread)
 	env_run(tf);
 }
 
-void update_eip(HANDLE hThread, uint32_t eip)
+void update_tf(HANDLE hThread, TrapFrame *tf)
 {
 	assert(hThread < NR_THREAD);
-	tcb[hThread].tf.eip = eip;
+	memcpy(&(tcb[hThread].tf), tf, sizeof(TrapFrame));
 }
 
-void switch_thread(TrapFrame *tf)
+void check_block()
 {
-	/* TODO: choose a thread from wait queue by priority
-	 * save current thread's trapframe :
-	 *		memcpy(cur_thread.tf, tf, sizeof(tf))
-	 * load new thread's trapframe :
-	 *		memcpy(tf, new_thread.tf, sizeof(tf))
-	 * set cur_esp and cur_handle
-	 */
-
-	tcb[cur_thread].timescales ++;
-	tcb[cur_thread].tf.eip = tf->eip;
-	pcb_time_plus(cur_proc);
-
-	HANDLE new_thread = cur_thread;
-	TCB *tmp = tq_wait;
-	while(tmp != NULL)
+	int i;
+	for(i = 0; i < NR_TIMELOCK; i++)
 	{
-		if(tmp->tp <= tcb[cur_thread].tp)
+		if(!timelock[i].dirty)
+			continue;
+
+		int t = time();
+		if(t >= timelock[i].tartime && tcb[timelock[i].tid].state == TS_BLOCKED)
 		{
-			new_thread = tmp->tid;
-			break;
+			add_queue(timelock[i].tid, Q_WAIT);
+			/* destroy timelock */
+			timelock[i].dirty = 0;
 		}
-		tmp = tmp->next;
 	}
-
-	if(new_thread != cur_thread)
-	{
-		uint32_t old_thread = cur_thread;
-		add_wait(cur_thread);
-		add_run(new_thread);
-		/* store TrapFrame information */
-		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
-		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
-
-		load_udir(tcb[new_thread].ppid);
-	}
-	
 }
 
 void copy_thread_tree(HANDLE hSrc, HANDLE hDst)
@@ -298,22 +313,105 @@ void copy_thread_tree(HANDLE hSrc, HANDLE hDst)
 			tcb[hnew].kesp = (uint32_t)(tcb[hnew].stack) + USER_KSTACK_SIZE;
 			if(tcb[i].state == TS_RUN || tcb[i].state == TS_WAIT)
 			{
-				add_wait(hnew);
+				add_queue(hnew, Q_WAIT);
 			}
 			else if(tcb[i].state == TS_BLOCKED)
 			{
-				add_block(hnew);
+				add_queue(hnew, Q_BLOCK);
 			}
 
 			if(i == cur_thread)
 			{
 				tcb[hnew].tf.eax = -1;
 				tcb[i].tf.eax = hDst;
-				printk("\n==[%d, %x, %x]==\n", hnew, tcb[hnew].tf.eip, tcb[i].tf.eip);
 			}
 		}
 	}
 }
+
+void __attribute__((noinline)) debug()
+{
+	printk("\033[1;32mdebug start\n\033[0m");
+}
+
+void show_tf(TrapFrame *tf)
+{
+	printk("v=%x, e=%x, eip=%x\n", tf->irq, tf->err, tf->eip);
+	printk("eax:%x, ebx:%x, ecx:%x, edx:%x\n", tf->eax, tf->ebx, tf->ecx, tf->edx);
+	printk("esi:%x, edi:%x, ebp:%x, esp:%x\n", tf->esi, tf->edi, tf->ebp, tf->esp);
+}
+
+HANDLE switch_thread(TrapFrame *tf)
+{
+	/* TODO: choose a thread from wait queue by priority
+	 * save current thread's trapframe :
+	 *		memcpy(cur_thread.tf, tf, sizeof(tf))
+	 * load new thread's trapframe :
+	 *		memcpy(tf, new_thread.tf, sizeof(tf))
+	 * set cur_esp and cur_handle
+	 */
+	uint32_t cur_tp = 9999;
+	HANDLE new_thread = cur_thread;
+
+	if(cur_thread != 0xffffffff)
+	{
+		tcb[cur_thread].timescales ++;
+		memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
+		pcb_time_plus(cur_proc);
+		cur_tp = tcb[cur_thread].tp;
+	}
+
+	check_block();
+	
+	TCB *tmp = tq_wait;
+
+	if(tmp == NULL && tcb[cur_thread].state ==TS_BLOCKED)
+		poweroff();
+
+	while(tmp != NULL)
+	{
+		if(tmp->tp <= cur_tp)
+		{
+			new_thread = tmp->tid;
+			break;
+		}
+		tmp = tmp->next;
+	}
+
+	if(new_thread != cur_thread)
+	{
+		uint32_t old_thread = cur_thread;
+		if(tcb[cur_thread].state == TS_RUN)
+			add_queue(cur_thread, Q_WAIT);
+		add_run(new_thread);
+
+		/* store TrapFrame information */
+		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
+		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
+
+		load_udir(tcb[new_thread].ppid);
+	}
+
+	return new_thread;
+}
+
+
+int sleep(TrapFrame *tf)
+{
+	assert(cur_thread != 0xffffffff);
+
+	uint32_t p_sb = apply_timelock();
+	timelock[p_sb].tid = cur_thread;
+	timelock[p_sb].tartime = time() + tf->ebx;
+
+	tcb[cur_thread].tartime = time() + tf->ebx;
+	add_queue(cur_thread, Q_BLOCK);
+	switch_thread(tf);
+	return 0;
+}
+
+void exit_thread(HANDLE hThread)
+{}
 
 /* new syscall:
  * 1. fork()

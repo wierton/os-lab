@@ -1,0 +1,5 @@
+idle_EX_CFLAGS := -O0 -I$(LIB_COMMON_DIR)
+idle_EX_LDFLAGS := -m elf_i386 -e _start
+idle_EX_RULES := bash fill.sh $$@ 10240
+
+$(eval $(call make_common_rules,idle,$(idle_EX_CFLAGS),$(idle_EX_LDFLAGS),$(LIB_COMMON),,$(idle_EX_RULES)))

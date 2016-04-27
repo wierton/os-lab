@@ -16,7 +16,7 @@ extern uint32_t cur_proc;
 void copy_thread_tree(HANDLE hSrc, HANDLE hDst);
 void copy_phypage(HANDLE hSrc, HANDLE hDst, uint32_t vaddr);
 HANDLE mm_alloc(HANDLE hProcess, uint32_t vaddr, uint32_t size);
-void update_eip(HANDLE hThread, uint32_t eip);
+void update_tf(HANDLE hThread, TrapFrame *tf);
 
 static PCB pcb[NR_PROCESS];
 
@@ -99,10 +99,10 @@ void copy_map(HANDLE hSrc, HANDLE hDst)
 	MEMH *pm = pcb[hSrc].pm;
 	pcb[hDst].pm = pm;
 	pcb[hDst].pm_num = pcb[hSrc].pm_num;
-	printk("(%d)\n", pcb[hSrc].pm_num);
+	mm_alloc(hDst, USER_STACK_ADDR - USER_STACK_SIZE, USER_STACK_SIZE);
+
 	for(i = 0; i < pcb[hSrc].pm_num; i++)
 	{
-		printk("[++:%x, %x],", pm[i].p_vaddr, pm[i].p_memsz);
 		mm_alloc(hDst, pm[i].p_vaddr, pm[i].p_memsz);
 	}
 }
@@ -138,7 +138,7 @@ int fork(TrapFrame *tf)
 {
 	/* apply available process handle */
 	HANDLE hProc = apply_ph();
-	update_eip(pcb[cur_proc].hMainThread, tf->eip);
+	update_tf(pcb[cur_proc].hMainThread, tf);
 
 	/* init state of cur_proc */
 	pcb[hProc].timescales = 0;

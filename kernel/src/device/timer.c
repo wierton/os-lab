@@ -8,12 +8,12 @@
 
 static uint32_t jiffy = 0;
 
-void timer_event()
+void timer_event(TrapFrame *tf)
 {
 	jiffy ++;
 }
 
-int time(TrapFrame *tf)
+int time()
 {
 	return jiffy;
 }

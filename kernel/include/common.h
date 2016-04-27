@@ -42,6 +42,7 @@ static inline uint32_t in_long(short port)
 }
 
 void abort(const char *file, int line);
+void poweroff();
 
 #define assert(cond)\
 	do { \

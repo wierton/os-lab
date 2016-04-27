@@ -7,14 +7,12 @@ int main()
 {
 	printf("\033[1;31mTestcase Start.\033[0m\n");
 	int ret = fork();
-	int i = 0;
 	if(ret == -1)
 	{
 		while(1)
 		{
 			printf("I'm child process, Ping!\n");
-			while(i ++ < 999999);
-			i = 0;
+			sleep(100);
 		}
 	}
 	else
@@ -22,8 +20,7 @@ int main()
 		while(1)
 		{
 			printf("I'm parent process, Pong!\n");
-			while(i ++ < 999999);
-			i = 0;
+			sleep(100);
 		}
 	}
 	return 0;

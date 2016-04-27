@@ -3,6 +3,5 @@
 
 int fork();
 int create_thread();
-int sleep(uint32_t);
 
 #endif

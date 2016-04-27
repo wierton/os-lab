@@ -15,7 +15,7 @@ typedef struct tagTCB {
 	uint32_t kesp;
 	uint8_t stack[USER_KSTACK_SIZE];
 	ThreadPriority tp;/* 0: max ... 3: min */
-	int tid, ptid, ppid, state, timescales;
+	int tid, ptid, ppid, state, timescales, tartime;
 	struct tagTCB *next;
 } TCB;
 

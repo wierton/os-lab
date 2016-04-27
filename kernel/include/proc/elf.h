@@ -1,7 +1,8 @@
 #ifndef __ELF_H__
 #define __ELF_H__
 
-#define DISK_START 102400
+#define DISK_START (102400 + 10240)
+#define IDLE_START 102400
 
 /* Elf header definition */
 typedef struct {
