@@ -1,6 +1,8 @@
 #ifndef __MEMOTY_H__
 #define __MEMORY_H__
 
+#define INVALID_OWNER 0xffffffff
+
 #define PAGE_SIZE 4096
 #define PHY_SIZE (1 << 27)
 
@@ -38,5 +40,6 @@ static inline uint32_t make_usr_pte(uint32_t addr)
 HANDLE apply_udir();
 HANDLE mm_alloc(HANDLE hProgress, uint32_t vaddr, uint32_t size);
 PDE *load_udir(HANDLE hProgress);
+void free_memspace(HANDLE hProcess);
 
 #endif

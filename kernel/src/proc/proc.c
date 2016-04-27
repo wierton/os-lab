@@ -31,7 +31,13 @@ void init_proc()
 	int i;
 	for(i = 0; i < NR_PROCESS; i++)
 	{
+		pcb[i].pid = i;
+		pcb[i].ppid = -1;
+		pcb[i].timescales = 0;
 		pcb[i].state = PS_UNALLOCED;
+		pcb[i].pudir = NULL;
+		pcb[i].pm_num = 0;
+		pcb[i].pm = NULL;
 	}
 }
 
@@ -167,4 +173,23 @@ HANDLE get_mainthread(HANDLE hProc)
 }
 
 void destroy_proc(HANDLE hProc)
-{}
+{
+	assert(hProc < NR_PROCESS);
+	pcb[hProc].ppid = -1;
+	pcb[hProc].timescales = 0;
+	pcb[hProc].state = PS_UNALLOCED;
+	pcb[hProc].pudir = NULL;
+	pcb[hProc].pm_num = 0;
+	pcb[hProc].pm = NULL;
+	free_memspace(hProc);
+}
+
+PHINFO get_memh(HANDLE hProc)
+{
+	assert(hProc < NR_PROCESS);
+	PHINFO tmp;
+	tmp.pm = pcb[hProc].pm;
+	tmp.pm_num = pcb[hProc].pm_num;
+	return tmp;
+}
+

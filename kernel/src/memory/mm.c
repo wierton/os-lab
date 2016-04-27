@@ -144,11 +144,13 @@ void init_phypage()
 	uint32_t phypage_base = (KERNEL_PHYBASE + KERNEL_SIZE) / PT_MEM_SIZE + 1;
 	for(i = phypage_base; i < PHY_SIZE / PT_MEM_SIZE - 1; i++)
 	{
+		phypage[i].hOwner = INVALID_OWNER;
 		phypage[i].paddr = i * PT_MEM_SIZE;
 		phypage[i].next = &phypage[i + 1];
 		phypage[i + 1].prev = &phypage[i];
 	}
 
+	phypage[i].hOwner = INVALID_OWNER;
 	phypage[i].paddr = i * PT_MEM_SIZE;
 	phypage[i].next = NULL;
 	
@@ -190,10 +192,12 @@ void free_phypage(uint32_t phyaddr)
 	struct PHYPAGE * next = target->next;
 	struct PHYPAGE * prev = target->prev;
 
+	tmp->hOwner = INVALID_OWNER;
+
 	if(prev != NULL)
-		target->prev->next = target->next;
+		prev->next = next;
 	if(next != NULL)
-		target->next->prev = prev;
+		next->prev = prev;
 
 	target->prev = NULL;
 	target->next = phypage_free;
@@ -204,20 +208,49 @@ void free_phypage(uint32_t phyaddr)
 		phypage_full = next;
 }
 
-void free_space(HANDLE hProcess)
+void free_memspace(HANDLE hProcess)
 {
+	assert(hProcess < NR_PROCESS);
+
+	int i, j, k;
+	/* free physical page */
 	struct PHYPAGE *tmp = phypage_full;
 	while(tmp != NULL)
 	{
 		struct PHYPAGE * wait_free = tmp;
 		tmp = tmp->next;
-		if(tmp->hOwner == hProcess)
+		if(wait_free->hOwner == hProcess)
 		{
 			free_phypage(wait_free->paddr);
 		}
 	}
 
-	udir_dirty[hProcess] = false;
+	PHINFO ph = get_memh(hProcess);
+	MEMH *pm = ph.pm;
+	uint32_t pm_num = ph.pm_num;
+
+	/* free user tab and user dir*/
+	for(i = 0; i < pm_num; i++)
+	{
+		uint32_t vaddr_ed = pm[i].p_vaddr + pm[i].p_memsz;
+		uint32_t vaddr_op = pm[i].p_vaddr - pm[i].p_vaddr % PAGE_SIZE;
+		for(j = vaddr_op; j < vaddr_ed; j += PD_MEM_SIZE)
+		{
+			uint32_t nr_dir = j / PD_MEM_SIZE;
+			
+			udir_dirty[nr_dir] = false;
+			pudir[hProcess][nr_dir].present = false;
+
+			PTE *pte = (void *)(pudir[hProcess][nr_dir].page_frame << 12);
+			utab_dirty[(uint32_t)(pte - putab[0]) / (NRT * sizeof(PTE))] = false;
+			uint32_t min_jk = min(j + PD_MEM_SIZE, vaddr_ed);
+			for(k = j; k < min_jk; k += PAGE_SIZE)
+			{
+				uint32_t nr_tab = (k & 0x3fffff) / PAGE_SIZE;
+				pte[nr_tab].present = false;
+			}
+		}
+	}	
 }
 
 uint32_t page_translate(HANDLE hProc, uint32_t vaddr)

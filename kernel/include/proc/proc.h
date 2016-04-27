@@ -15,6 +15,11 @@ typedef struct {
 	uint32_t p_vaddr, p_paddr, p_memsz;
 } MEMH;
 
+typedef struct {
+	MEMH *pm;
+	uint32_t pm_num;
+} PHINFO;
+
 static inline MEMH make_memh(uint32_t x, uint32_t y, uint32_t z)
 {
 	MEMH tmp;
@@ -41,5 +46,6 @@ void pcb_time_plus(HANDLE hProc);
 void enter_proc(HANDLE hProc);
 void switch_proc(TrapFrame *tf);
 HANDLE create_proc(uint32_t disk_off, ProcAttr *pa);
+PHINFO get_memh(HANDLE hProc);
 
 #endif

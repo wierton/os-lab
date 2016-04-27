@@ -13,7 +13,7 @@ int main()
 		while(1)
 		{
 			printf("I'm child process, Ping!\n");
-			while(i ++ < 999999);
+			while(i ++ < 29999999);
 			i = 0;
 		}
 	}
@@ -22,7 +22,7 @@ int main()
 		while(1)
 		{
 			printf("I'm parent process, Pong!\n");
-			while(i ++ < 999999);
+			while(i ++ < 9999999);
 			i = 0;
 		}
 	}
