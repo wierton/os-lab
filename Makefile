@@ -22,7 +22,8 @@ include kernel/Makefile.part
 # some testcase here
 
 # TESTCASE := fm
-TESTCASE := fork_sleep
+# TESTCASE := fork_sleep
+TESTCASE := exit
 
 include testcase/Makefile.part
 

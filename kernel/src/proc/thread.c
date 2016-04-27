@@ -13,6 +13,8 @@ static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 HANDLE apply_udir();
 PDE *get_udir(HANDLE);
 PDE *load_udir(HANDLE);
+HANDLE get_mainthread(HANDLE hProc);
+void destroy_proc(HANDLE hProc);
 
 uint32_t cur_esp;
 uint32_t cur_thread, cur_proc;
@@ -410,8 +412,47 @@ int sleep(TrapFrame *tf)
 	return 0;
 }
 
-void exit_thread(HANDLE hThread)
-{}
+void destroy_thread(HANDLE hThread, TrapFrame *tf)
+{
+	assert(hThread < NR_THREAD);
+	add_queue(hThread, Q_BLOCK);
+	switch_thread(tf);
+	assert(cur_thread != hThread);
+	rm_queue(hThread, Q_BLOCK);
+
+	tcb[hThread].ptid = -1;
+	tcb[hThread].ppid = -1;
+	tcb[hThread].state = TS_UNALLOCED;
+	tcb[hThread].timescales = 0;
+	tcb[hThread].tartime = -1;
+	tcb[hThread].next = NULL;
+	tcb[hThread].kesp = (uint32_t)(tcb[hThread].stack) + USER_KSTACK_SIZE;
+}
+
+int exit_thread(TrapFrame *tf)
+{
+	int i;
+	HANDLE mtid = get_mainthread(tcb[cur_thread].ppid);
+	HANDLE ppid = tcb[cur_thread].ppid;
+	if(cur_thread == mtid)
+	{
+		/* destroy all threads belongs to this process */
+		for(i = 0; i < NR_THREAD; i++)
+		{
+			if(tcb[i].state != TS_UNALLOCED && tcb[i].ppid == ppid)
+			{
+				destroy_thread(i, tf);
+			}
+		}
+
+		/* destroy process */
+		destroy_proc(ppid);
+	}
+	else
+		destroy_thread(cur_thread, tf);
+
+	return 0;
+}
 
 /* new syscall:
  * 1. fork()

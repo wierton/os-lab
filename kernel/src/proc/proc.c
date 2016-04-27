@@ -160,3 +160,11 @@ void set_memh(HANDLE hProc, uint32_t pm_num, MEMH *pm)
 	pcb[hProc].pm = pm;
 }
 
+HANDLE get_mainthread(HANDLE hProc)
+{
+	assert(hProc < NR_PROCESS);
+	return pcb[hProc].hMainThread;
+}
+
+void destroy_proc(HANDLE hProc)
+{}
