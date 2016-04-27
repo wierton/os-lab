@@ -77,6 +77,7 @@ void env_run(TrapFrame *tf)
 
 void load_game()
 {
-	HANDLE hGame = create_proc(DISK_START);
+	ProcAttr pa = {3};
+	HANDLE hGame = create_proc(DISK_START, &pa);
 	enter_proc(hGame);
 }

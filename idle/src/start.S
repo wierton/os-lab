@@ -5,5 +5,5 @@
 
 _start:
 	call main
-	movl $5, %eax
+	movl $4, %eax
 	int $0x80

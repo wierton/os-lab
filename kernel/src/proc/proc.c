@@ -45,7 +45,7 @@ HANDLE apply_ph()
 	return hProc;
 }
 
-HANDLE create_proc(uint32_t disk_off)
+HANDLE create_proc(uint32_t disk_off, ProcAttr *pa)
 /* input argument should be unsigned char *path */
 {
 	/* every process should be treated as thread(main thread)
@@ -69,7 +69,7 @@ HANDLE create_proc(uint32_t disk_off)
 	/* create main thread for this process */
 	ThreadAttr ta;
 	ta.entry = eip;
-	ta.thread_prior = TP_3;
+	ta.thread_prior = pa->proc_prior;
 	ta.ptid = NULL_PTID;
 	pcb[hProc].hMainThread = create_thread(hProc, &ta);
 

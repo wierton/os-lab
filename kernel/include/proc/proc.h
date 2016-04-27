@@ -32,10 +32,14 @@ typedef struct tagPCB {
 	MEMH *pm;
 } PCB;
 
+typedef struct {
+	uint32_t proc_prior;
+} ProcAttr;
+
 HANDLE apply_ph();
 void pcb_time_plus(HANDLE hProc);
-HANDLE create_proc(uint32_t disk_off);
 void enter_proc(HANDLE hProc);
 void switch_proc(TrapFrame *tf);
+HANDLE create_proc(uint32_t disk_off, ProcAttr *pa);
 
 #endif

@@ -8,7 +8,8 @@
 /* thread state */
 enum {TS_UNALLOCED, TS_RUN, TS_WAIT, TS_BLOCKED};
 /* ThreadPriority */
-typedef enum {TP_0, TP_1, TP_2, TP_3} ThreadPriority;
+/*				driver          user  idle  */
+typedef enum {TP_0, TP_1, TP_2, TP_3, TP_4, TP_MIN = 9999} ThreadPriority;
 
 typedef struct tagTCB {
 	TrapFrame tf;

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "x86/x86.h"
 #include "proc/elf.h"
+#include "proc/proc.h"
 
 void init_page();
 void init_mm();
@@ -19,8 +20,6 @@ void init_thread();
 void load_game();
 
 void init_cond();
-
-void create_proc(uint32_t);
 
 extern uint32_t _stack_end_;
 
@@ -48,7 +47,11 @@ void init_cond()
 	init_thread();
 	init_font();
 
-	create_proc(IDLE_START);
+	/* create idle process */
+	ProcAttr pa = {4};
+	create_proc(IDLE_START, &pa);
+
+	/* load user process */
 	load_game();
 	while(1);
 }

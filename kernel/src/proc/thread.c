@@ -352,7 +352,7 @@ HANDLE switch_thread(TrapFrame *tf)
 	 *		memcpy(tf, new_thread.tf, sizeof(tf))
 	 * set cur_esp and cur_handle
 	 */
-	uint32_t cur_tp = 9999;
+	uint32_t cur_tp = (uint32_t)TP_MIN;
 	HANDLE new_thread = cur_thread;
 
 	if(cur_thread != 0xffffffff)
@@ -363,8 +363,11 @@ HANDLE switch_thread(TrapFrame *tf)
 		cur_tp = tcb[cur_thread].tp;
 	}
 
+	if(tcb[cur_thread].state == TS_BLOCKED)
+		cur_tp = (uint32_t)TP_MIN;
+
 	check_block();
-	
+
 	TCB *tmp = tq_wait;
 
 	if(tmp == NULL && tcb[cur_thread].state ==TS_BLOCKED)
