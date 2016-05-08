@@ -6,6 +6,13 @@ void keyboard_event(uint32_t);
 void do_syscall(TrapFrame *tf);
 void switch_thread(TrapFrame *tf);
 
+void print_tf(TrapFrame *tf)
+{
+	printk("v=%x e=%x eip=%x\n", tf->irq, tf->err, tf->eip);
+	printk("EAX=%x EBX=%x ECX=%x EDX=%x\n", tf->eax, tf->ebx, tf->ecx, tf->edx);
+	printk("ESI=%x EDI=%x EBP=%x ESP=%x\n", tf->eax, tf->ebx, tf->ecx, tf->edx);
+}
+
 void irq_handle(TrapFrame *tf)
 {
 	if(tf->irq < 1000)
@@ -17,6 +24,7 @@ void irq_handle(TrapFrame *tf)
 		else
 		{
 			printk("\033[1;31mUnhandled exception : #%d at 0x%x\n\033[0m", tf->irq, tf->eip);
+			print_tf(tf);
 			assert(0);
 		}
 	}

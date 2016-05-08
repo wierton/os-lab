@@ -22,9 +22,10 @@ include kernel/Makefile.part
 # some testcase here
 
 # TESTCASE := helloworld
-TESTCASE := fork
+# TESTCASE := fork
 # TESTCASE := fork_sleep
 # TESTCASE := exit
+TESTCASE := thread
 
 include testcase/Makefile.part
 

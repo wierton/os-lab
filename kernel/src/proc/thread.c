@@ -13,7 +13,6 @@ static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 HANDLE apply_udir();
 PDE *get_udir(HANDLE);
 PDE *load_udir(HANDLE);
-HANDLE get_mainthread(HANDLE hProc);
 void destroy_proc(HANDLE hProc);
 
 uint32_t cur_esp;
@@ -389,7 +388,7 @@ HANDLE switch_thread(TrapFrame *tf)
 		if(tcb[cur_thread].state == TS_RUN)
 			add_queue(cur_thread, Q_WAIT);
 		add_run(new_thread);
-
+	
 		/* store TrapFrame information */
 		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
 		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
@@ -435,7 +434,7 @@ void destroy_thread(HANDLE hThread, TrapFrame *tf)
 int exit_thread(TrapFrame *tf)
 {
 	int i;
-	HANDLE mtid = get_mainthread(tcb[cur_thread].ppid);
+	HANDLE mtid = get_pcb(tcb[cur_thread].ppid)->hMainThread;
 	HANDLE ppid = tcb[cur_thread].ppid;
 	if(cur_thread == mtid)
 	{
@@ -454,6 +453,28 @@ int exit_thread(TrapFrame *tf)
 	else
 		destroy_thread(cur_thread, tf);
 
+	return 0;
+}
+
+int pthread_create(TrapFrame *tf)
+{
+	ThreadAttr ta;
+	ta.ptid = cur_thread;
+	ta.entry = tf->ebx;
+	ta.thread_prior = tcb[get_pcb(cur_proc)->hMainThread].tp;
+	ta.ptid = cur_proc;
+	HANDLE hThread = create_thread(cur_proc, &ta);
+	uint32_t stack_top = apply_stack_addr(cur_proc, 4096) - 12;
+
+	/* push args in stack */
+	tcb[hThread].tf.esp = stack_top;
+	((uint32_t *)(stack_top + 4))[0] = tf->ecx;
+	((uint32_t *)(stack_top + 8))[0] = tf->edx;
+	return hThread;
+}
+
+int pthread_join(TrapFrame *tf)
+{
 	return 0;
 }
 

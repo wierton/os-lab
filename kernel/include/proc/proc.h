@@ -35,6 +35,7 @@ typedef struct tagPCB {
 	HANDLE hMainThread;
 	uint32_t pm_num;
 	MEMH *pm;
+	uint32_t available_stack_addr;
 } PCB;
 
 typedef struct {
@@ -47,5 +48,8 @@ void enter_proc(HANDLE hProc);
 void switch_proc(TrapFrame *tf);
 HANDLE create_proc(uint32_t disk_off, ProcAttr *pa);
 PHINFO get_memh(HANDLE hProc);
+PCB * get_pcb(HANDLE hProc);
+uint32_t apply_stack_addr(HANDLE hProc, uint32_t size);
+
 
 #endif

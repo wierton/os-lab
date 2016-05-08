@@ -61,6 +61,9 @@ HANDLE create_proc(uint32_t disk_off, ProcAttr *pa)
 	/* apply available process handle */
 	HANDLE hProc = apply_ph();
 
+	/* user stack addr */
+	pcb[hProc].available_stack_addr = USER_STACK_ADDR;
+
 	/* init state of cur_proc */
 	pcb[hProc].timescales = 0;
 	pcb[hProc].ppid = 0;
@@ -80,6 +83,15 @@ HANDLE create_proc(uint32_t disk_off, ProcAttr *pa)
 	pcb[hProc].hMainThread = create_thread(hProc, &ta);
 
 	return hProc;
+}
+
+uint32_t apply_stack_addr(HANDLE hProc, uint32_t size)
+{
+	assert(hProc < NR_PROCESS);
+	pcb[hProc].available_stack_addr += (4 * 1024 + size);
+	assert(pcb[hProc].available_stack_addr < 0xc0000000);
+	mm_alloc(hProc, pcb[hProc].available_stack_addr - size, size);
+	return pcb[hProc].available_stack_addr;
 }
 
 /* run this process(load main thread) */
@@ -166,10 +178,10 @@ void set_memh(HANDLE hProc, uint32_t pm_num, MEMH *pm)
 	pcb[hProc].pm = pm;
 }
 
-HANDLE get_mainthread(HANDLE hProc)
+PCB * get_pcb(HANDLE hProc)
 {
 	assert(hProc < NR_PROCESS);
-	return pcb[hProc].hMainThread;
+	return &pcb[hProc];
 }
 
 void destroy_proc(HANDLE hProc)

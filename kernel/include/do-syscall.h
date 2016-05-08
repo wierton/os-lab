@@ -3,6 +3,9 @@
 
 void abort(const char *file, int line);
 
+int pthread_create(TrapFrame *tf);
+int pthread_join(TrapFrame *tf);
+
 int fork(TrapFrame *tf);
 int sleep(TrapFrame *tf);
 int exit_thread(TrapFrame *tf);

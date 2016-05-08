@@ -53,6 +53,7 @@ void vec10();
 void vec11();
 void vec12();
 void vec13();
+void vec14();
 void vecsys();
 
 void irq0(); // timer
@@ -83,6 +84,7 @@ void init_idt()
 	set_trap(idt + 11, (uint32_t)vec11, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 12, (uint32_t)vec12, SEG_KERNEL_CODE, DPL_KERNEL);
 	set_trap(idt + 13, (uint32_t)vec13, SEG_KERNEL_CODE, DPL_KERNEL);
+	set_trap(idt + 14, (uint32_t)vec14, SEG_KERNEL_CODE, DPL_KERNEL);
 	
 	set_intr(idt + 0x80, (uint32_t)vecsys, SEG_KERNEL_CODE, DPL_USER);
 
