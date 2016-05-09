@@ -38,6 +38,7 @@ idle	: $(idle_BIN)
 lib		: $(LIB_COMMON) $(LIB_APP)
 
 ENTRY := $(test_BIN)
+# ENTRY := $(game_BIN)
 
 $(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)

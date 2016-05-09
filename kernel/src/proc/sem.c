@@ -21,7 +21,6 @@ void init_wlist()
 	}
 	wlist[i].next = NULL;
 	wfree = &wlist[0];
-	printk("asdasd\n");
 }
 
 WLIST *apply_wlist()

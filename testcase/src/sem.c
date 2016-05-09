@@ -12,7 +12,7 @@ void *producer(void * args)
 	{
 		sem_post(&sem);
 		printf("producer:%d.\n", sem.value);
-		sleep(200);
+		sleep(100);
 	}
 	return NULL;
 }
@@ -23,7 +23,7 @@ void *consumer(void * args)
 	{
 		sem_wait(&sem);
 		printf("consumer:%d.\n", sem.value);
-		sleep(133);
+		sleep(33);
 	}
 	return NULL;
 }
@@ -38,6 +38,7 @@ int main()
 	pthread_create(&tid, NULL, producer, NULL);
 
 	printf("main thread sleep.\n");
-	while(1);
+	sleep(10000);
+	sem_destroy(&sem);
 	return 0;
 }

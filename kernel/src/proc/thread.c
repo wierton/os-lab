@@ -58,7 +58,7 @@ void show_queue(int id)
 	else
 		tmp = tq_blocked;
 
-	printk("%s chain(tid, ppid):", id ? "blocked" : "wait");
+	printk("%s chain(state, tid, ppid):", id ? "blocked" : "wait");
 	while(tmp != NULL)
 	{
 		printk("(%d, %d, %d) -- ", tmp->state, tmp->tid, tmp->ppid);
@@ -134,6 +134,7 @@ void add_queue(HANDLE hThread, uint32_t queue)
 
 	if(tcb[hThread].state == ts_tar)
 	{
+		printk("%x %x %x\n", hThread, tcb[hThread].state, ts_tar);
 		assert(0);
 	}
 
@@ -295,6 +296,10 @@ void check_block()
 			/* destroy timelock */
 			timelock[i].dirty = 0;
 		}
+		else if(tcb[timelock[i].tid].state == TS_UNALLOCED)
+		{
+			timelock[i].dirty = 0;
+		}
 	}
 }
 
@@ -432,9 +437,9 @@ int wakeup(TrapFrame *tf, HANDLE hThread)
 void destroy_thread(HANDLE hThread, TrapFrame *tf)
 {
 	assert(hThread < NR_THREAD);
-	add_queue(hThread, Q_BLOCK);
-	switch_thread(tf);
-	assert(cur_thread != hThread);
+	if(tcb[hThread].state != TS_BLOCKED)
+		add_queue(hThread, Q_BLOCK);
+
 	rm_queue(hThread, Q_BLOCK);
 
 	tcb[hThread].ptid = -1;
@@ -449,6 +454,7 @@ void destroy_thread(HANDLE hThread, TrapFrame *tf)
 int exit_thread(TrapFrame *tf)
 {
 	int i;
+	HANDLE ctid = cur_thread;
 	HANDLE mtid = get_pcb(tcb[cur_thread].ppid)->hMainThread;
 	HANDLE ppid = tcb[cur_thread].ppid;
 	if(cur_thread == mtid)
@@ -458,6 +464,10 @@ int exit_thread(TrapFrame *tf)
 		{
 			if(tcb[i].state != TS_UNALLOCED && tcb[i].ppid == ppid)
 			{
+				if(tcb[i].state == TS_RUN)
+				{
+					block(tf, i);
+				}
 				destroy_thread(i, tf);
 			}
 		}
@@ -466,8 +476,12 @@ int exit_thread(TrapFrame *tf)
 		destroy_proc(ppid);
 	}
 	else
-		destroy_thread(cur_thread, tf);
+	{
+		block(tf, cur_thread);
+		destroy_thread(ctid, tf);
+	}
 
+	assert(tcb[cur_thread].state == TS_RUN);
 	return 0;
 }
 
