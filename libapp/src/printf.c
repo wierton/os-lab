@@ -1,27 +1,26 @@
 #include "common.h"
+#include "syscall.h"
 #include "lib.h"
 
-static char *dststr = NULL;
-typedef void (*PRINTER)(char);
+static int buflen = 0;
+static char *dststr = NULL, buf[1000];
 
-void printc(char ch)
-{
-	syscall(8, ch);
-}
-
-void sprintc(char ch)
+inline void sprintc(char ch)
 {
 	if(dststr != NULL)
 		*dststr++ = ch;
 }
 
-inline void prints(char *str, PRINTER printer)
+inline int prints(char *str)
 {
+	char *tmp = str;
 	if(str != NULL)
-		for(;*str != '\0'; str ++) printer(*str);
+		for(;*str != '\0'; str ++)
+			sprintc(*str);
+	return (int)(str - tmp);
 }
 
-void printd(int val, PRINTER printer)
+int printd(int val)
 {
 	int i = 15;
 	bool IsNeg = false;
@@ -41,10 +40,11 @@ void printd(int val, PRINTER printer)
 	if(IsNeg)
 		buf[i--] = '-';
 
-	prints(&buf[i + 1], printer);
+	prints(&buf[i + 1]);
+	return 15 - i;
 }
 
-void printx(uint32_t val, PRINTER printer)
+int printx(uint32_t val)
 {
 	int i, pos = 0;
 	char buf[20];
@@ -63,37 +63,40 @@ void printx(uint32_t val, PRINTER printer)
 	if(pos == 0)
 		buf[pos ++] = '0';
 	buf[pos] = 0;
-	prints((void *)buf, printer);
+	prints((void *)buf);
+	return pos;
 }
 
-int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER printer) {
+int vfprintf(const char *ctl, void **args) {
 	int i = 0, pargs = 0;
 	for(;ctl[i] != '\0'; i ++)
 	{
 		if(ctl[i] != '%')
 		{
-			printer(ctl[i]);
+			sprintc(ctl[i]);
+			buflen ++;
 			continue;
 		}
 		switch(ctl[++ i])
 		{
 			case 'c':
 			case 'C':
-				printer((char)(((int *)args)[pargs ++]));
+				buflen ++;
+			   	sprintc((char)(((int *)args)[pargs ++]));
 				break;
 			case 'd':
 			case 'D':
-				printd((((int *)args)[pargs ++]), printer);
+				buflen += printd((((int *)args)[pargs ++]));
 				break;
 			case 's':
 			case 'S':
-				prints((void *)(((int *)args)[pargs ++]), printer);
+				buflen += prints((void *)(((int *)args)[pargs ++]));
 				break;
 			case 'p':
 			case 'P':
 			case 'x':
 			case 'X':
-				printx((((uint32_t *)args)[pargs ++]), printer);
+				buflen += printx((((uint32_t *)args)[pargs ++]));
 				break;
 			default:
 				break;
@@ -105,22 +108,20 @@ int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER pri
 void __attribute__((noinline)) printf(const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
-	vfprintf(ctl, args, printc);
+	dststr = buf;
+	buflen = 0;
+	vfprintf(ctl, args);
+	sprintc('\0');
+	syscall(9, 2, buf, buflen);
+	dststr = NULL;
 }
 
 void __attribute__((noinline)) sprintf(char *dst, const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
+	buflen = 0;
 	dststr = dst;
-	vfprintf(ctl, args, sprintc);
-	sprintc('\0');
-	dststr = NULL;
-}
-
-void __attribute__((noinline)) vsprintf(char *dst, const char *ctl, void **args)
-{
-	dststr = dst;
-	vfprintf(ctl, args, sprintc);
+	vfprintf(ctl, args);
 	sprintc('\0');
 	dststr = NULL;
 }
