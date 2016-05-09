@@ -414,6 +414,21 @@ int sleep(TrapFrame *tf)
 	return 0;
 }
 
+int block(TrapFrame *tf, HANDLE hThread)
+{
+	assert(hThread < NR_THREAD);
+	add_queue(hThread, Q_BLOCK);
+	switch_thread(tf);
+	return 0;
+}
+
+int wakeup(TrapFrame *tf, HANDLE hThread)
+{
+	assert(hThread < NR_THREAD);
+	add_queue(hThread, Q_WAIT);
+	return 0;
+}
+
 void destroy_thread(HANDLE hThread, TrapFrame *tf)
 {
 	assert(hThread < NR_THREAD);

@@ -17,6 +17,7 @@ void test_printk();
 void init_segment();
 void init_proc();
 void init_thread();
+void init_wlist();
 void load_game();
 
 void init_cond();
@@ -45,6 +46,7 @@ void init_cond()
 	init_mm();
 	init_proc();
 	init_thread();
+	init_wlist();
 	init_font();
 
 	/* create idle process */

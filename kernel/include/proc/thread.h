@@ -28,5 +28,7 @@ typedef struct {
 
 HANDLE create_thread(HANDLE hProc, ThreadAttr *pta);
 void enter_thread(HANDLE hThread);
+int block(TrapFrame *tf, HANDLE hThread);
+int wakeup(TrapFrame *tf, HANDLE hThread);
 
 #endif

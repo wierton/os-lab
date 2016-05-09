@@ -3,6 +3,12 @@
 
 void abort(const char *file, int line);
 
+int sem_init(TrapFrame *tf);
+int sem_destroy(TrapFrame *tf);
+
+int sem_wait(TrapFrame *tf);
+int sem_post(TrapFrame *tf);
+
 int pthread_create(TrapFrame *tf);
 int pthread_join(TrapFrame *tf);
 
