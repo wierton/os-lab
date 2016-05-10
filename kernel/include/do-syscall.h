@@ -19,7 +19,7 @@ int sys_printc(TrapFrame *tf);
 int sys_prints(TrapFrame *tf);
 int flip_screen(TrapFrame *tf);
 int read_key(TrapFrame *tf);
-int timer_event(TrapFrame *tf);
+int get_ms(TrapFrame *tf);
 int user_abort(TrapFrame *tf)
 {
 	printk("\033[1;31mUser abort!\n\033[0m");

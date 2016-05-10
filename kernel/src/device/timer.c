@@ -8,9 +8,14 @@
 
 static uint32_t jiffy = 0;
 
-void timer_event(TrapFrame *tf)
+void timer_event()
 {
 	jiffy ++;
+}
+
+int get_ms(TrapFrame *tf)
+{
+	return jiffy;
 }
 
 int time()
