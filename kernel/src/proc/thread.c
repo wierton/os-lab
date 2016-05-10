@@ -1,32 +1,24 @@
 #include "common.h"
 #include "string.h"
 #include "x86/x86.h"
+#include "x86/memory.h"
 #include "proc/elf.h"
 #include "proc/proc.h"
 #include "device/time.h"
 
 #define Q_WAIT  1
 #define Q_BLOCK 2
+#define NR_TIMELOCK 16
 
 static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
-
-HANDLE apply_udir();
-PDE *get_udir(HANDLE);
-PDE *load_udir(HANDLE);
-void destroy_proc(HANDLE hProc);
 
 uint32_t cur_esp;
 uint32_t cur_thread, cur_proc;
 uint32_t tmp_stack[4096];
 
-typedef struct {
-	uint32_t tid, dirty;
-	int tartime;
-} TIMELOCK;
-
-#define NR_TIMELOCK 16
-
 TIMELOCK timelock[NR_TIMELOCK];
+
+/* function defined from here */
 
 uint32_t apply_timelock()
 {
@@ -281,7 +273,7 @@ void update_tf(HANDLE hThread, TrapFrame *tf)
 	memcpy(&(tcb[hThread].tf), tf, sizeof(TrapFrame));
 }
 
-void check_block()
+void check_timelock()
 {
 	int i;
 	for(i = 0; i < NR_TIMELOCK; i++)
@@ -356,27 +348,29 @@ HANDLE switch_thread(TrapFrame *tf)
 	 *		memcpy(tf, new_thread.tf, sizeof(tf))
 	 * set cur_esp and cur_handle
 	 */
+
+	assert(cur_thread != 0xffffffff);
+
 	uint32_t cur_tp = (uint32_t)TP_MIN;
 	HANDLE new_thread = cur_thread;
 
-	if(cur_thread != 0xffffffff)
-	{
-		tcb[cur_thread].timescales ++;
-		memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
-		pcb_time_plus(cur_proc);
-		cur_tp = tcb[cur_thread].tp;
-	}
+	tcb[cur_thread].timescales ++;
+	memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
+	pcb_time_plus(cur_proc);
+	cur_tp = tcb[cur_thread].tp;
 
 	if(tcb[cur_thread].state == TS_BLOCKED)
 		cur_tp = (uint32_t)TP_MIN;
 
-	check_block();
+	check_timelock();
 
 	TCB *tmp = tq_wait;
 
-	if(tmp == NULL && tcb[cur_thread].state ==TS_BLOCKED)
+	/* no thread left */
+	if(tmp == NULL && tcb[cur_thread].state == TS_BLOCKED)
 		poweroff();
 
+	/* check for new thread which is prior to old thread */
 	while(tmp != NULL)
 	{
 		if(tmp->tp <= cur_tp)
@@ -394,7 +388,7 @@ HANDLE switch_thread(TrapFrame *tf)
 			add_queue(cur_thread, Q_WAIT);
 		add_run(new_thread);
 	
-		/* store TrapFrame information */
+		/* save TrapFrame information */
 		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
 		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
 

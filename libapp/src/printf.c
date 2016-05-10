@@ -105,6 +105,14 @@ int vfprintf(const char *ctl, void **args) {
 	return 0;
 }
 
+void vsprintf(char *dst, const char *ctl, void **args)
+{
+	dststr = dst;
+	vfprintf(ctl, args);
+	sprintc('\0');
+	dststr = NULL;
+}
+
 void __attribute__((noinline)) printf(const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;

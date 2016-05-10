@@ -5,6 +5,12 @@
 #define NULL_PTID -1
 #define USER_KSTACK_SIZE 4096
 
+/* time lock */
+typedef struct {
+	uint32_t tid, dirty;
+	int tartime;
+} TIMELOCK;
+
 /* thread state */
 enum {TS_UNALLOCED, TS_RUN, TS_WAIT, TS_BLOCKED};
 /* ThreadPriority */

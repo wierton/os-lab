@@ -21,12 +21,12 @@ include kernel/Makefile.part
 
 # some testcase here
 
-TESTCASE := helloworld
+# TESTCASE := helloworld
 # TESTCASE := fork
 # TESTCASE := fork_sleep
 # TESTCASE := exit
 # TESTCASE := thread
-# TESTCASE := sem
+TESTCASE := sem
 
 include testcase/Makefile.part
 
@@ -38,7 +38,7 @@ idle	: $(idle_BIN)
 lib		: $(LIB_COMMON) $(LIB_APP)
 
 ENTRY := $(test_BIN)
-# ENTRY := $(game_BIN)
+ENTRY := $(game_BIN)
 
 $(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)

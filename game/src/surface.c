@@ -205,7 +205,7 @@ void font_sin(char ch, int x, int y, uint32_t color, uint8_t times)
 
 }
 
-void font_out(int x, int y, uint32_t color, uint8_t times, const char *ctl, ...)
+void __attribute__((noinline)) font_out(int x, int y, uint32_t color, uint8_t times, const char *ctl, ...)
 {
 	char str[100];
 	vsprintf(str, ctl, ((void **)&ctl) + 1);

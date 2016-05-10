@@ -49,6 +49,7 @@ void switch_proc(TrapFrame *tf);
 HANDLE create_proc(uint32_t disk_off, ProcAttr *pa);
 PHINFO get_memh(HANDLE hProc);
 PCB * get_pcb(HANDLE hProc);
+void destroy_proc(HANDLE hProc);
 uint32_t apply_stack_addr(HANDLE hProc, uint32_t size);
 
 

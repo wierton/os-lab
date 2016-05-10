@@ -31,6 +31,7 @@ void irq_handle(TrapFrame *tf)
 	else if(tf->irq == 1000)
 	{
 		timer_event();
+		/* encounter time interrupt on user mode */
 		if(tf->cs == (0x18 | 0x3))
 			switch_thread(tf);
 	}
