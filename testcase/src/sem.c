@@ -48,9 +48,9 @@ int main()
 	pthread_create(&tid, NULL, consumer, NULL);
 	pthread_create(&tid, NULL, producer, NULL);
 	pthread_create(&tid, NULL, producer, NULL);
-/*	pthread_create(&tid, NULL, producer, NULL);
 	pthread_create(&tid, NULL, producer, NULL);
-*/
+	pthread_create(&tid, NULL, producer, NULL);
+
 	printf("main thread sleep.\n");
 	sleep(100000);
 	sem_destroy(&sem_free);

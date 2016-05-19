@@ -25,8 +25,8 @@ include kernel/Makefile.part
 # TESTCASE := fork
 # TESTCASE := fork_sleep
 # TESTCASE := exit
-TESTCASE := thread
-# TESTCASE := sem
+# TESTCASE := thread
+TESTCASE := sem
 
 include testcase/Makefile.part
 
