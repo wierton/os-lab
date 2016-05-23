@@ -1,4 +1,4 @@
-.PHNOY: count run clean boot game kernel idle lib submit gdb debug test
+.PHNOY: count run clean boot game kernel idle lib submit gdb debug test disk
 
 CC := gcc-4.9 # this version is ok
 LD := ld
@@ -10,6 +10,7 @@ LIB_APP_DIR := libapp/include
 all: $(IMG)
 
 include config/Makefile.build
+include format/Makefile.part
 
 include libapp/Makefile.part
 include libcommon/Makefile.part
@@ -36,12 +37,16 @@ kernel	: $(kernel_BIN)
 test	: $(test_BIN)
 idle	: $(idle_BIN)
 lib		: $(LIB_COMMON) $(LIB_APP)
+format  : $(format_BIN)
 
 ENTRY := $(test_BIN)
 # ENTRY := $(game_BIN)
 
 $(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)
+
+disk: $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
+	$(format_BIN) $(IMG) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 
 debug: $(IMG)
 	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
