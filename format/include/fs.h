@@ -16,29 +16,32 @@
 
 /* definition of inode */
 typedef struct {
-	uint32_t nr_block[12];
-	uint32_t index_1, index_2, index_3;
+	uint32_t filesz;
+	uint8_t filetype;
+	uint8_t used;
+	uint32_t nr_block[10 + 3];
 	uint32_t pad;
-} ROOT_INODE;
+} INODE;
 
 #define ADDRS_PER_BLOCK (BLOCKSZ / sizeof(uint32_t))
 
-#define L1_ST (12 * BLOCKSZ)
-#define L2_ST (L1_ST + ADDRS_PER_BLOCK * BLOCKSZ)
-#define L3_ST (L2_ST + ADDRS_PER_BLOCK * ADDRS_PER_BLOCK * BLOCKSZ)
-#define L4_ST (L3_ST + ADDRS_PER_BLOCK * ADDRS_PER_BLOCK * ADDRS_PER_BLOCK * BLOCKSZ)
+#define L1_ST 10
+#define L2_ST (L1_ST + ADDRS_PER_BLOCK)
+#define L3_ST (L2_ST + ADDRS_PER_BLOCK * ADDRS_PER_BLOCK)
+#define L4_ST (L3_ST + ADDRS_PER_BLOCK * ADDRS_PER_BLOCK * ADDRS_PER_BLOCK)
 
 #define L0_PSZ BLOCKSZ
 #define L1_PSZ (ADDRS_PER_BLOCK * L0_PSZ)
 #define L2_PSZ (ADDRS_PER_BLOCK * L1_PSZ)
 #define L3_PSZ (ADDRS_PER_BLOCK * L2_PSZ)
 
-#define L0_SZ L1_ST
-#define L1_SZ L2_ST
-#define L2_SZ L3_ST
-#define L3_SZ L4_ST
+#define L0_SZ (L1_ST * BLOCKSZ)
+#define L1_SZ (L2_ST * BLOCKSZ)
+#define L2_SZ (L3_ST * BLOCKSZ)
+#define L3_SZ (L4_ST * BLOCKSZ)
 
-#define INVALID_NRNODE 0xFFFFFFFF
+#define INVALID_NRINODE 0xFFFFFFFF
+#define INVALID_NRBLOCK 0
 
 #define BOOTMGR_SZ (2 * 4096)
 #define BITMAP_SZ  (512 * 1024)
@@ -50,18 +53,6 @@ typedef struct {
 #define INODE_ST  (BITMAP_ST + BITMAP_SZ)
 #define FILE_ST   (INODE_ST + INODE_SZ)
 
-
-/* definition of file control block in dir file */
-typedef struct {
-	uint32_t nr_root_inode;
-	uint32_t filesz;
-	uint32_t filename;
-	uint8_t filetype;
-	uint8_t fileauthority;
-	uint8_t used;
-	uint8_t pad;
-} FCB;
-
 /* definition for directory file */
 typedef struct {
 	uint32_t nr_files;
@@ -69,5 +60,18 @@ typedef struct {
 	uint32_t filesz;
 	uint32_t pad0;
 } DIR_ATTR;
+
+int read_disk(void *buf, uint32_t off, uint32_t size);
+int write_disk(void *buf, uint32_t off, uint32_t size);
+void init_disk(int argv, char *args[]);
+void zeros_block(uint32_t blockno);
+uint32_t apply_block();
+void free_block(uint32_t nr_block);
+uint32_t apply_inode();
+void free_inode(uint32_t nr_inode);
+int get_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block, uint32_t *buf);
+int alloc_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block);
+int fs_read(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf);
+int fs_write(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf);
 
 #endif

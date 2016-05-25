@@ -46,6 +46,7 @@ $(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)
 
 disk: $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
+	@rm -rf $(IMG)
 	$(format_BIN) $(IMG) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 
 debug: $(IMG)
