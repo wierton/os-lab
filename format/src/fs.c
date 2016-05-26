@@ -378,3 +378,12 @@ int fs_write(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf)
 	
 	return size;
 }
+
+
+/* function for directory */
+
+void addto_dir(INODE *pdirinode, INODE *pfinode, char *filename)
+{}
+
+void delfrom_dir(INODE *pdirinode, INODE *pfinode, char *filename)
+{}

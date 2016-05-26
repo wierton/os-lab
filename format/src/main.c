@@ -46,6 +46,15 @@ uint32_t read_file(char *filename, char *buf)
 	return filesz;
 }
 
+uint32_t read_offfile(char *filename, int op, int ed, char *buf)
+{
+	FILE *fp = fopen(filename, "r");
+	fseek(fp, op, SEEK_SET);
+	fread(buf, ed - op + 1, 1, fp);
+	fclose(fp);
+	return ed - op + 1;
+}
+
 uint32_t write_file(char *filename, char *buf, int size)
 {
 	FILE *fp = fopen(filename, "w+");
@@ -106,7 +115,23 @@ int main(int argv, char *args[])
 		printf("%d %d %d\n", filesz, tbuf[j - 1], tbuf[j]);
 	}
 
-	printf("%s %d: %x, %x, %x\n", __func__, __LINE__, BITMAP_ST, INODE_ST, FILE_ST);
+	/* test fs_read and fs_write for unaligned read and write operation */
+/*
+	INODE *pinode = &inode[apply_inode()];
+	int filesz = get_filesz(args[3]);
+	pinode->used = 1;
+	pinode->filesz = 0;
+	for(i = 0; i < 12; i++)
+	{
+		read_offfile(args[3], filesz*i/12, filesz*(i+1)/12, buf);
+		fs_write(pinode, filesz*i/12, filesz*(i+1)/12, buf);
+		fs_read(pinode, filesz*i/12, filesz*(i+1)/12, tbuf + filesz*i/12);
+
+		printf("[%d, %d) ", filesz*i/12, filesz*(i+1)/12);
+	}
+	printf("\n");
+	write_file("obj/tmp", tbuf, filesz);
+*/
 	/* update root directory file */
 
 	/* update bitmap */
