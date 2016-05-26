@@ -8,7 +8,8 @@
 
 #include "common.h"
 #include "fs.h"
-	
+
+FILE *fp;
 char buf[1024 * 1024];
 int pfname = 0;
 char filename[1024];
@@ -54,7 +55,7 @@ void free_block(uint32_t);
 int main(int argv, char *args[])
 {
 	int i, j, k, l;
-	FILE *fp = fopen(args[1], "w+");
+	fp = fopen(args[1], "w+");
 	printf("%s\n", args[1]);
 	if(fp == NULL)
 	{
@@ -64,6 +65,7 @@ int main(int argv, char *args[])
 
 	init_disk(argv, args);
 
+	printf("%d, %d, %d\n", BOOTMGR_SZ, BITMAP_SZ, INODE_SZ);
 	/* write bootmgr */
 	read_file(args[2], buf);
 	fwrite(buf, BOOTMGR_SZ, 1, fp);
@@ -83,6 +85,9 @@ int main(int argv, char *args[])
 		fwrite(buf, 512 * 1024, 1, fp);
 	}
 
+	INODE testinode = {0};
+	printf("%x, %x\n", INVALID_BLOCKNO, INVALID_INODENO);
+
 	/* write file */
 	for(i = 3; i < argv; i++)
 	{
@@ -93,8 +98,9 @@ int main(int argv, char *args[])
 		assert(filesz < sizeof(buf));
 		read_file(args[i], buf);
 		fs_write(&inode, 0, filesz, buf);
-		printf("filesz:%d, %d, %d\n", filesz, (filesz / BLOCKSZ + 1) * BLOCKSZ, get_filesz(args[1]));
+		printf("filesz %s:%d, %d, %d\n\n", args[i], filesz, (filesz / BLOCKSZ + 1) * BLOCKSZ, get_filesz(args[1]));
 	}
+
 	fclose(fp);
 
 	return 0;

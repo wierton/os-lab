@@ -9,8 +9,8 @@
 
 #define BLOCKSZ (4 * 1024)
 
-/* l0   0 - 49511
- * l1   49512 - 114687
+/* 4096           0x1000
+ * 512 * 1024     0x80000
  * l2   114688 - 
  */
 
@@ -40,8 +40,8 @@ typedef struct {
 #define L2_SZ (L3_ST * BLOCKSZ)
 #define L3_SZ (L4_ST * BLOCKSZ)
 
-#define INVALID_NRINODE 0xFFFFFFFF
-#define INVALID_NRBLOCK 0
+#define INVALID_INODENO 0xFFFFFFFF
+#define INVALID_BLOCKNO 0
 
 #define BOOTMGR_SZ (2 * 4096)
 #define BITMAP_SZ  (512 * 1024)
