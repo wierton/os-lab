@@ -10,10 +10,9 @@
 #include "fs.h"
 
 FILE *fp;
-char buf[1024 * 1024];
-int pfname = 0;
-char filename[1024];
-
+char buf[4 * 1024 * 1024];
+char tbuf[4 * 1024 * 1024];
+char rootdir[4 * 1024];
 extern uint32_t bitmap[512 * 1024 / 32];
 extern INODE inode[512 * 1024 / sizeof(INODE)];
 
@@ -47,16 +46,20 @@ uint32_t read_file(char *filename, char *buf)
 	return filesz;
 }
 
-uint32_t apply_block();
-void free_block(uint32_t);
+uint32_t write_file(char *filename, char *buf, int size)
+{
+	FILE *fp = fopen(filename, "w+");
+	fwrite(buf, size, 1, fp);
+	fclose(fp);
+	return size;
+}
 
 /* args: bootmgr, file1, file2, file3 ...
  * */
 int main(int argv, char *args[])
 {
-	int i, j, k, l;
+	int i, j;
 	fp = fopen(args[1], "w+");
-	printf("%s\n", args[1]);
 	if(fp == NULL)
 	{
 		printf("Unknown error '%s'!\n", args[1]);
@@ -65,7 +68,6 @@ int main(int argv, char *args[])
 
 	init_disk(argv, args);
 
-	printf("%d, %d, %d\n", BOOTMGR_SZ, BITMAP_SZ, INODE_SZ);
 	/* write bootmgr */
 	read_file(args[2], buf);
 	fwrite(buf, BOOTMGR_SZ, 1, fp);
@@ -79,27 +81,41 @@ int main(int argv, char *args[])
 	fwrite(buf, INODE_SZ, 1, fp);
 
 	/* empty space for file */
-	for(i = 0; i < 10; i++)
+	for(i = 0; i < 4; i++)
 	{
 		memset(buf, 0, 512 * 1024);
 		fwrite(buf, 512 * 1024, 1, fp);
 	}
 
-	INODE testinode = {0};
-	printf("%x, %x\n", INVALID_BLOCKNO, INVALID_INODENO);
-
 	/* write file */
 	for(i = 3; i < argv; i++)
 	{
+		char str[200];
 		int filesz = get_filesz(args[i]);
-		INODE inode = {0};
-		inode.used = 1;
-		inode.filesz = 0;
+		INODE *pinode = &inode[apply_inode()];
+		pinode->used = 1;
+		pinode->filesz = 0;
 		assert(filesz < sizeof(buf));
 		read_file(args[i], buf);
-		fs_write(&inode, 0, filesz, buf);
-		printf("filesz %s:%d, %d, %d\n\n", args[i], filesz, (filesz / BLOCKSZ + 1) * BLOCKSZ, get_filesz(args[1]));
+		fs_write(pinode, 0, filesz, buf);
+		/* test code for fs_write and fs_read */
+		memset(tbuf, 0, sizeof(tbuf));
+		fs_read(pinode, 0, filesz, tbuf);
+		for(j = 0; j < filesz; j++)
+			assert(buf[j] == tbuf[j]);
+		printf("%d %d %d\n", filesz, tbuf[j - 1], tbuf[j]);
 	}
+
+	printf("%s %d: %x, %x, %x\n", __func__, __LINE__, BITMAP_ST, INODE_ST, FILE_ST);
+	/* update root directory file */
+
+	/* update bitmap */
+	fseek(fp, BITMAP_ST, SEEK_SET);
+	fwrite(bitmap, BITMAP_SZ, 1, fp);
+
+	/* write inode */
+	fseek(fp, INODE_ST, SEEK_SET);
+	fwrite(inode, INODE_SZ, 1, fp);
 
 	fclose(fp);
 

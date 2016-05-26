@@ -4,8 +4,8 @@ format_CFILES := $(shell find ./format -name "*.c")
 format_BIN := obj/format/format
 
 $(format_BIN): $(format_CFILES)
-	mkdir -p $(@D)
-	gcc $^ -o $@ -Iformat/include
+	@mkdir -p $(@D)
+	@gcc $^ -o $@ -Iformat/include
 
 clean-format:
-	rm -rf obj/format
+	@rm -rf obj/format

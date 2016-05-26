@@ -47,7 +47,7 @@ $(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 
 disk: $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 	@rm -rf $(IMG)
-	$(format_BIN) $(IMG) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
+	@$(format_BIN) $(IMG) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
 
 debug: $(IMG)
 	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)

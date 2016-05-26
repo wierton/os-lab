@@ -124,13 +124,6 @@ int get_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block, ui
 	if(q == 0)
 		return 0;
 
-	log("%d\n", 1-1);
-	printf("%d, ", q);
-	for(i = 0; i < q; i++)
-		printf("[%d, %d, %x] ", addr[i], level[i], FILE_ST + addr[i] * BLOCKSZ);
-	printf("\n");
-
-
 	while(p < q)
 	{
 		if(level[p] > 0)
@@ -242,7 +235,6 @@ int alloc_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block)
 				}
 			}
 			p ++;
-			log("%x\n", disk_off);
 			write_disk(tbuf, disk_off, sizeof(tbuf));
 			assert(p < 1024 && q < 1024);
 		}
@@ -263,6 +255,7 @@ int alloc_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block)
 int fs_read(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf)
 {
 	int i, j, tsize, ed = off + size;
+	uint32_t stblockno, edblockno;
 	uint32_t block_addr[256];
 	uint32_t stno = off / BLOCKSZ, edno = (off + size - 1) / BLOCKSZ;
 	if(off > pinode->filesz || size == 0)
@@ -271,25 +264,29 @@ int fs_read(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf)
 
 	/* read the first block(given that some read operation on bytes less than 4096) */
 	tsize = min(BLOCKSZ - off % BLOCKSZ, size);
-	read_disk(buf, off, tsize);
+	get_disk_blockno(pinode, stno, 1, &stblockno);
+	read_disk(buf, FILE_ST + stblockno * BLOCKSZ + off % BLOCKSZ, tsize);
 	buf += tsize;
 	off += tsize;
+	size -= tsize;
 	for(i = stno + 1; i < edno; i += 256)
 	{
-		int t = get_disk_blockno(pinode, i, min(i + 256, edno - 1), block_addr);
-		log("%d, %d, %d, %d\n", t, i, i + 256, edno);
+		int t = get_disk_blockno(pinode, i, min(i + 256, edno - i), block_addr);
 		for(j = 0; j < t; j++)
 		{
 			read_disk(buf, FILE_ST + block_addr[j] * BLOCKSZ, BLOCKSZ);
 			buf += BLOCKSZ;
 			off += BLOCKSZ;
+			size -= BLOCKSZ;
 		}
 	}
 	/* read the last block */
-	int toff = max(off, ed - tsize);
-	read_disk(buf, toff, ed - toff);
+	tsize = ed - off;
+	get_disk_blockno(pinode, edno, 1, &edblockno);
+	read_disk(buf, FILE_ST + edblockno * BLOCKSZ + off % BLOCKSZ, tsize);
 	buf += tsize;
 	off += tsize;
+	size -= tsize;
 
 	return size;
 }
@@ -301,7 +298,6 @@ int fs_write(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf)
 	if(off > pinode->filesz || size == 0)
 		return 0;
 
-	log("%d, %d\n", off, pinode->filesz);
 	if(off < pinode->filesz)
 	{
 		/* write the part haven't exceed the file end
