@@ -10,15 +10,15 @@
 #include "fs.h"
 
 FILE *fp;
-char buf[4 * 1024 * 1024];
-char tbuf[4 * 1024 * 1024];
+char buf[8 * 1024 * 1024];
+char tbuf[8 * 1024 * 1024];
 char rootdir[4 * 1024];
-extern uint32_t bitmap[512 * 1024 / 32];
-extern INODE inode[512 * 1024 / sizeof(INODE)];
+uint32_t bitmap[512 * 1024 / 32];
+INODE inode[512 * 1024 / sizeof(INODE)];
 
 char *get_filename(char *fullpath)
 {
-	int i = 0, j = 0;
+	int i = 0, j = 1;
 	while(fullpath[j])
 	{
 		if(fullpath[j ++] == '/')
@@ -46,13 +46,13 @@ uint32_t read_file(char *filename, char *buf)
 	return filesz;
 }
 
-uint32_t read_offfile(char *filename, int op, int ed, char *buf)
+uint32_t read_offfile(char *filename, int op, int size, char *buf)
 {
 	FILE *fp = fopen(filename, "r");
 	fseek(fp, op, SEEK_SET);
-	fread(buf, ed - op + 1, 1, fp);
+	int tmp = fread(buf, size, 1, fp);
 	fclose(fp);
-	return ed - op + 1;
+	return tmp;
 }
 
 uint32_t write_file(char *filename, char *buf, int size)
@@ -74,6 +74,20 @@ int main(int argv, char *args[])
 		printf("Unknown error '%s'!\n", args[1]);
 		return 0;
 	}
+/*
+	int tmp = 0xffffffff;
+	for(i = 0; i < 8192; i++)
+		((int*)buf)[i] = i;
+	INODE *ptinode = &inode[0];
+	fs_write(ptinode, 0, 8192, buf);
+	for(i = 0; i < 8192; i += 4)
+	{
+		fs_read(ptinode, i, 4, &tmp);
+		printf("%08x ", tmp);
+	}
+	printf("\n");
+*/
+	printf("macro: %x, %x, %d\n", INODE_ST, BITMAP_ST, sizeof(INODE));
 
 	init_disk(argv, args);
 
@@ -99,7 +113,6 @@ int main(int argv, char *args[])
 	/* write file */
 	for(i = 3; i < argv; i++)
 	{
-		char str[200];
 		int filesz = get_filesz(args[i]);
 		INODE *pinode = &inode[apply_inode()];
 		pinode->used = 1;
@@ -111,34 +124,53 @@ int main(int argv, char *args[])
 		memset(tbuf, 0, sizeof(tbuf));
 		fs_read(pinode, 0, filesz, tbuf);
 		for(j = 0; j < filesz; j++)
+		{
 			assert(buf[j] == tbuf[j]);
-		printf("%d %d %d\n", filesz, tbuf[j - 1], tbuf[j]);
+		}
 	}
 
+/*
+	memset(tbuf, 0xcc, sizeof(tbuf));
+	fs_read(&inode[0], 2048, 4096, (void*)tbuf + 2048);
+	printf("%x, %x, %x, %x\n", ((uint8_t*)tbuf)[2047], ((uint8_t*)tbuf)[2048], ((uint8_t*)tbuf)[2048 + 4095], ((uint8_t*)tbuf)[2048 + 4096]);
+*/
 	/* test fs_read and fs_write for unaligned read and write operation */
 /*
-	INODE *pinode = &inode[apply_inode()];
+	INODE *pinode = &inode[0];
 	int filesz = get_filesz(args[3]);
 	pinode->used = 1;
 	pinode->filesz = 0;
-	for(i = 0; i < 12; i++)
+	memset(tbuf, 0xcc, sizeof(tbuf));
+	for(i = 0; i < 4; i++)
 	{
-		read_offfile(args[3], filesz*i/12, filesz*(i+1)/12, buf);
-		fs_write(pinode, filesz*i/12, filesz*(i+1)/12, buf);
-		fs_read(pinode, filesz*i/12, filesz*(i+1)/12, tbuf + filesz*i/12);
-
-		printf("[%d, %d) ", filesz*i/12, filesz*(i+1)/12);
+		int diff = filesz*(i+1)/4 - filesz*i/4;
+		memset(buf, 0xcc, sizeof(buf));
+		read_offfile(args[3], filesz*i/4, diff, buf);
+		fs_write(pinode, filesz*i/4, diff, buf);
+		fs_read(pinode, filesz*i/4, diff, tbuf + filesz*i/4);
 	}
-	printf("\n");
 	write_file("obj/tmp", tbuf, filesz);
 */
 	/* update root directory file */
+	inode[0].nr_block[0] = 0;
+	for(i = 0; i < argv - 3; i++)
+	{
+		inode[i + 1].filetype = '-';
+		addto_dir(&inode[0], &inode[i + 1], get_filename(args[i + 3]));
+	}
+
+	for(i = 0; i < argv - 3; i++)
+	{
+		char path[20];
+		sprintf(path, "/%s", get_filename(args[i + 3]));
+		printf("%s, %d\n", get_filename(args[i + 3]), opendir(path));
+	}
 
 	/* update bitmap */
 	fseek(fp, BITMAP_ST, SEEK_SET);
 	fwrite(bitmap, BITMAP_SZ, 1, fp);
 
-	/* write inode */
+	/* update inode */
 	fseek(fp, INODE_ST, SEEK_SET);
 	fwrite(inode, INODE_SZ, 1, fp);
 

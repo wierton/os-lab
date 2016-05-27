@@ -1,11 +1,11 @@
 .PHONY: clean-format
 
-format_CFILES := $(shell find ./format -name "*.c")
+format_CFILES := $(shell find ./format/src -name "*.c")
 format_BIN := obj/format/format
 
 $(format_BIN): $(format_CFILES)
 	@mkdir -p $(@D)
-	@gcc $^ -o $@ -Iformat/include
+	@gcc-4.9 -m32 -Wall -Werror -MMD -fno-builtin -fno-stack-protector $^ -o $@ -Iformat/include
 
 clean-format:
 	@rm -rf obj/format

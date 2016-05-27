@@ -19,8 +19,9 @@ typedef struct {
 	uint32_t filesz;
 	uint8_t filetype;
 	uint8_t used;
+	uint16_t pad0;
 	uint32_t nr_block[10 + 3];
-	uint32_t pad;
+	uint32_t inodeno;
 } INODE;
 
 #define ADDRS_PER_BLOCK (BLOCKSZ / sizeof(uint32_t))
@@ -41,7 +42,7 @@ typedef struct {
 #define L3_SZ (L4_ST * BLOCKSZ)
 
 #define INVALID_INODENO 0xFFFFFFFF
-#define INVALID_BLOCKNO 0
+#define INVALID_BLOCKNO 0xFFFFFFFF
 
 #define BOOTMGR_SZ (2 * 4096)
 #define BITMAP_SZ  (512 * 1024)
@@ -56,10 +57,17 @@ typedef struct {
 /* definition for directory file */
 typedef struct {
 	uint32_t nr_files;
+	uint32_t nr_index;
 	uint32_t filename_st;
 	uint32_t filesz;
-	uint32_t pad0;
 } DIR_ATTR;
+
+typedef struct {
+	uint32_t inode;
+	uint32_t filename_st;
+	uint32_t len;
+	uint32_t dirty;
+} FILE_ATTR;
 
 int read_disk(void *buf, uint32_t off, uint32_t size);
 int write_disk(void *buf, uint32_t off, uint32_t size);
@@ -71,7 +79,9 @@ uint32_t apply_inode();
 void free_inode(uint32_t nr_inode);
 int get_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block, uint32_t *buf);
 int alloc_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block);
-int fs_read(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf);
-int fs_write(INODE *pinode, uint32_t off, uint32_t size, uint8_t *buf);
+int fs_read(INODE *pinode, uint32_t off, uint32_t size, void *buf);
+int fs_write(INODE *pinode, uint32_t off, uint32_t size, void *buf);
+void addto_dir(INODE *pdirinode, INODE *pfinode, char *filename);
+uint32_t opendir(char *filename);
 
 #endif
