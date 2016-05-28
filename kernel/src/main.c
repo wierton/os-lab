@@ -19,6 +19,7 @@ void init_proc();
 void init_thread();
 void init_wlist();
 void init_fs();
+void init_ufs();
 void load_game();
 
 void init_cond();
@@ -51,6 +52,7 @@ void init_cond()
 	init_font();
 	init_disk();
 	init_fs();
+	init_ufs();
 
 	printk("Load Testcase!\n");
 

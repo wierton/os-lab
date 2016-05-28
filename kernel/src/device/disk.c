@@ -81,6 +81,7 @@ int write_section(uint32_t secno, const void *src, size_t nsecs)
 	out_byte(0x1F7, 0x30);	// CMD 0x30 means write sector
 
 	for(; nsecs > 0; nsecs--, src += SECTSIZE) {
+		/* block here. */
 		if((r = ide_wait_ready(1)) < 0)
 			return r;
 		outsl(0x1F0, src, SECTSIZE/4);
@@ -91,6 +92,23 @@ int write_section(uint32_t secno, const void *src, size_t nsecs)
 
 int write_disk(void *buf, uint32_t offset, uint32_t size)
 {
+	int i, op = 0, ed = 0;
+	uint32_t off = offset / 512;
+	uint32_t td = (uint32_t)buf - offset % 512;
+	uint32_t final = (uint32_t)buf + size;
+
+	uint8_t sect[512];
+	for(; td < final; td += 512, off++)
+	{
+		read_section((uint32_t)sect, off);
+		op = max(td, (uint32_t)buf);
+		ed = min(td + 512, final);
+		for(i = op; i < ed; i++)
+		{
+			sect[i - td] = ((uint8_t *)i)[0];
+		}
+		write_section(off, sect, 1);
+	}
 	return size;
 }
 

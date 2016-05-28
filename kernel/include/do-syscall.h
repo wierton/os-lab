@@ -12,6 +12,13 @@ int sem_post(TrapFrame *tf);
 int pthread_create(TrapFrame *tf);
 int pthread_join(TrapFrame *tf);
 
+int open(TrapFrame *tf);
+int close(TrapFrame *tf);
+int read(TrapFrame *tf);
+int write(TrapFrame *tf);
+
+int list(TrapFrame *tf);
+
 int fork(TrapFrame *tf);
 int sleep(TrapFrame *tf);
 int exit_thread(TrapFrame *tf);

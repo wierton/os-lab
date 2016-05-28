@@ -1,6 +1,7 @@
 #include "common.h"
 #include "math.h"
 #include "string.h"
+#include "x86/x86.h"
 #include "device/disk.h"
 #include "device/fs.h"
 
@@ -608,7 +609,7 @@ uint32_t opendir(char *filename)
 int creat(char *pathname)
 {
 	char path[255];
-	int i, p = 0;
+	int i = 0, p = 0;
 	int ret = opendir(pathname);
 	if(ret != INVALID_INODENO || pathname[0] != '/')
 		return -1;
@@ -629,6 +630,7 @@ int creat(char *pathname)
 		INODE *pdirinode = open_inode(inodeno);
 		uint32_t finode = apply_inode();
 		INODE *pfinode = open_inode(finode);
+		pfinode->used = 1;
 		pfinode->filesz = 0;
 		pfinode->filetype = '-';
 		addto_dir(pdirinode, pfinode, &pathname[p]);
@@ -675,3 +677,40 @@ int makedir(char *pathname)
 	return -1;
 }
 
+int list(TrapFrame *tf)
+{
+	int i, j, total_size = 0, count = 0;
+	char *name[255];
+	DIR_ATTR da = {0};
+	FILE_ATTR fa[32] = {{0}};
+	char *path = (char *)tf->ebx;
+	uint32_t inodeno = opendir(path);
+	if(inodeno == INVALID_INODENO)
+		return -1;
+
+	INODE *pinode = open_inode(inodeno);
+
+	fs_read(pinode, 0, sizeof(DIR_ATTR), &da);
+
+	for(i = 0; i < da.nr_index; i += 32)
+	{
+		int left = min(sizeof(fa), (da.nr_index - i) * sizeof(FILE_ATTR));
+		fs_read(pinode, sizeof(DIR_ATTR) + i * sizeof(FILE_ATTR), left, fa);
+		for(j = 0; j < left / sizeof(FILE_ATTR); j++)
+		{
+			if(fa[j].dirty == 1)
+			{
+				fs_read(pinode, fa[j].filename_st, fa[j].len + 1, name);
+				INODE *pfinode = open_inode(fa[j].inode);
+				printk("%c %d\t%s\n", pfinode->filetype, pfinode->filesz, name);
+				total_size += pfinode->filesz;
+				count ++;
+				close_inode(pfinode);
+			}
+		}
+	}
+
+	printk("total:%d, size:%d\n\n", count, total_size);
+	close_inode(pinode);
+	return 0;
+}
