@@ -7,13 +7,7 @@ float sin(float);
 float cos(float);
 float fabs(float);
 float sqrt(float);
-
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+inline int min(int a, int b);
+inline int max(int a, int b);
 
 #endif

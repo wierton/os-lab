@@ -2,10 +2,31 @@
 #include "math.h"
 #include "x86/x86.h"
 
+#define SECTSIZE 512
+
+#define IDE_BSY		0x80
+#define IDE_DRDY	0x40
+#define IDE_DF		0x20
+#define IDE_ERR		0x01
+
+static int diskno = 1;
+
 void __attribute__((noinline)) wait_disk()
 {
 	while((in_byte(0x1f7) & 0xc0) != 0x40);
 }
+
+static int ide_wait_ready(bool check_error)
+{
+	int r;
+
+	while (((r = in_byte(0x1F7)) & (IDE_BSY|IDE_DRDY)) != IDE_DRDY);
+
+	if (check_error && (r & (IDE_DF|IDE_ERR)) != 0)
+		return -1;
+	return 0;
+}
+
 
 void read_section(uint32_t dst, int sectnum)
 {
@@ -24,18 +45,18 @@ void read_section(uint32_t dst, int sectnum)
 	}
 }
 
-void read_disk(uint32_t dst, uint32_t offset, uint32_t size)
+void read_disk(void *dst, uint32_t offset, uint32_t size)
 {
 	int i, op = 0, ed = 0;
-	uint32_t off = offset / 512 + 9;
-	uint32_t td = dst - offset % 512;
-	uint32_t final = dst + size;
+	uint32_t off = offset / 512;
+	uint32_t td = (uint32_t)dst - offset % 512;
+	uint32_t final = (uint32_t)dst + size;
 
 	uint8_t sect[512];
 	for(; td < final; td += 512, off++)
 	{
 		read_section((uint32_t)sect, off);
-		op = max(td, dst);
+		op = max(td, (uint32_t)dst);
 		ed = min(td + 512, final);
 		for(i = op; i < ed; i++)
 		{
@@ -44,7 +65,48 @@ void read_disk(uint32_t dst, uint32_t offset, uint32_t size)
 	}
 }
 
+
+int write_section(uint32_t secno, const void *src, size_t nsecs)
+{
+	int r = 0;
+	assert(nsecs <= 256);
+
+	ide_wait_ready(0);
+
+	out_byte(0x1F2, nsecs);
+	out_byte(0x1F3, secno & 0xFF);
+	out_byte(0x1F4, (secno >> 8) & 0xFF);
+	out_byte(0x1F5, (secno >> 16) & 0xFF);
+	out_byte(0x1F6, 0xE0 | ((diskno&1)<<4) | ((secno>>24)&0x0F));
+	out_byte(0x1F7, 0x30);	// CMD 0x30 means write sector
+
+	for(; nsecs > 0; nsecs--, src += SECTSIZE) {
+		if((r = ide_wait_ready(1)) < 0)
+			return r;
+		outsl(0x1F0, src, SECTSIZE/4);
+	}
+
+	return 0;
+}
+
+int write_disk(void *buf, uint32_t offset, uint32_t size)
+{
+	return size;
+}
+
 void init_disk()
 {
-	//read_section(0x8000, 0);
+	/*
+	int i, j;
+	uint8_t buf[4096];
+	for(i = 0; i < 7; i++)
+	{
+		int diff = 4096*(i+1)/7 - 4096*i/7;
+		read_disk(buf, 0x2000 + 4096*i/7, diff);
+		for(j = 0; j < diff; j++)
+		{
+			printk("%x ", buf[j]);
+		}
+	}
+	*/
 }

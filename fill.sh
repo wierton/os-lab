@@ -6,7 +6,7 @@ if [ $# -lt 2 ]; then
 fi
 
 if [ ! -r "$1" ];then
-	echo -e "file not exist or can't be read"
+	echo -e "file $1 not exist or can't be read"
 	exit -1
 fi
 
@@ -14,7 +14,6 @@ size=`ls -l "$1" | awk '{ print $5 }'`
 
 if [ $size -gt $(( $2 - 2 )) ];then
 	echo -e "\033[1;31mfile size $size is too big!\033[0m"
-	rm "$1"
 	exit -1
 fi
 

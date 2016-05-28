@@ -46,7 +46,7 @@ HANDLE apply_ph();
 void pcb_time_plus(HANDLE hProc);
 void enter_proc(HANDLE hProc);
 void switch_proc(TrapFrame *tf);
-HANDLE create_proc(uint32_t disk_off, ProcAttr *pa);
+HANDLE create_proc(char *path, ProcAttr *pa);
 PHINFO get_memh(HANDLE hProc);
 PCB * get_pcb(HANDLE hProc);
 void destroy_proc(HANDLE hProc);

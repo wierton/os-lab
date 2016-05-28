@@ -1,12 +1,12 @@
-#include "common.h"
-#include "string.h"
+#ifndef __STRING_H__
+#define __STRING_H__
 
 void inline memcpy(void *dst, void *src, size_t len)
 {
 	asm volatile("cld; rep movsb"::"c"(len), "S"(src), "D"(dst));
 }
 
-void inline memset(void *dst, uint32_t val, size_t len)
+void inline memset(void *dst, size_t len, uint8_t val)
 {
 	int i;
 	for(i = 0; i < len; i++)
@@ -16,24 +16,26 @@ void inline memset(void *dst, uint32_t val, size_t len)
 
 int strcmp(char *src, char *dst)
 {
-	while(src[0] && dst[0] && src[0] == dst[0])
-	{
-		src ++;	dst ++;
-	}
-	return src[0] - dst[0];
+	while(*src++ == *dst++);
+	return *dst - *src;
 }
 
 size_t strlen(char *str)
 {
 	char *ptr = str;
 	while(*ptr++);
-	return ((size_t)(ptr - str - 1));
+	return ((size_t)(ptr - str));
 }
 
 int strcat(char *dst, char *src)
 {
-	int i, dlen = strlen(dst), slen = strlen(src);
-	for(i = 0; i <= slen; i++)
-		dst[i + dlen] = src[i];
+	size_t len = strlen(dst);
+	dst = dst + len;
+	for(; *src != 0;)
+	{
+		*dst++ = *src++;
+	}
 	return 0;
 }
+
+#endif

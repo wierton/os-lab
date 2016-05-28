@@ -159,12 +159,32 @@ int main(int argv, char *args[])
 		addto_dir(&inode[0], &inode[i + 1], get_filename(args[i + 3]));
 	}
 
+	/* write directory /usr */
+	INODE *pinode = &inode[apply_inode()];
+	pinode->filetype = 'd';
+	addto_dir(&inode[0], pinode, "usr");
+
 	for(i = 0; i < argv - 3; i++)
 	{
 		char path[20];
 		sprintf(path, "/%s", get_filename(args[i + 3]));
-		printf("%s, %d\n", get_filename(args[i + 3]), opendir(path));
+		printf("/%s, %d\n", get_filename(args[i + 3]), opendir(path));
 	}
+
+	printf("%s, %d\n", "/usr/", opendir("/usr/"));
+	/* write directory /usr */
+	INODE *pninode = &inode[apply_inode()];
+	pninode->filesz = 0;
+	pninode->filetype = '-';
+	addto_dir(pinode, pninode, "nick");
+	printf("%s, %d\n", "/usr/nick", opendir("/usr/nick"));
+
+	creat("/usr/a.txt");
+	printf("%s, %d\n", "/usr/a.txt", opendir("/usr/a.txt"));
+	makedir("/usr/john");
+	printf("%s, %d\n", "/usr/john/", opendir("/usr/john/"));
+	creat("/usr/john/b.txt");
+	printf("%s, %d\n", "/usr/john/b.txt", opendir("/usr/john/b.txt"));
 
 	/* update bitmap */
 	fseek(fp, BITMAP_ST, SEEK_SET);

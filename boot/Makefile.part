@@ -1,22 +1,21 @@
 boot_EX_CFLAGS := -O2 -Iboot/include
-boot_EX_LDFLAGS := -e boot_main -Ttext 0x7c00
+boot_EX_LDFLAGS := -e boot_main -O2 -Ttext 0x7c00
 boot_O := obj/boot/boot.o
 
 $(eval $(call make_common_rules,boot,$(boot_EX_CFLAGS),$(boot_EX_LDFLAGS),,boot/boot))
 
-load_EX_CFLAGS := -O2 -Iboot/include
-load_EX_LDFLAGS := -e loader -Ttext 0x9000
+load_EX_CFLAGS := -O0 -Iboot/include
+load_EX_LDFLAGS := -m elf_i386 -T boot/load/load.ld
 load_O := obj/load/load.o
 
 $(eval $(call make_common_rules,load,$(load_EX_CFLAGS),$(load_EX_LDFLAGS),,boot/load))
 
 boot_IMG := $(boot_OBJ_DIR)/boot.img
 
-$(boot_IMG): $(boot_BIN) $(load_BIN)
+$(boot_IMG): clean-load $(boot_BIN) $(load_BIN)
 	@mkdir -p $(@D)
 	@objcopy -I elf32-i386 -O binary -j .text $(boot_BIN) $(boot_O)
-	@objcopy -I elf32-i386 -O binary -j .text $(load_BIN) $(load_O)
 	@bash fill.sh $(boot_O) 512
 	@bash fill.sh $(boot_O) 4096
-	@bash fill.sh $(load_O) 4096
-	@cat $(boot_O) $(load_O) > $(boot_IMG)
+	@bash fill.sh $(load_BIN) 16384
+	@cat $(boot_O) $(load_BIN) > $(boot_IMG)

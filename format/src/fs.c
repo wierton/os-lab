@@ -7,8 +7,6 @@
 #define log(format, ...) printf("%s %d: "format, __func__, __LINE__, __VA_ARGS__)
 
 extern FILE *fp;
-//uint32_t bitmap[512 * 1024 / 32];
-//INODE inode[512 * 1024 / sizeof(INODE)];
 
 int get_filesz(char *filename);
 
@@ -99,12 +97,16 @@ void close_inode(INODE *pinode)
 uint32_t apply_inode()
 {
 	extern INODE inode[512 * 1024 / sizeof(INODE)];
-	int i;
+	int i, j;
 	for(i = 1; i < sizeof(inode)/sizeof(inode[0]); i++)
 	{
 		if(inode[i].used == 0)
 		{
+			inode[i].filesz = 0;
+			inode[i].filetype = '-';
 			inode[i].used = 1;
+			for(j = 0; j < 13; j++)
+				inode[i].nr_block[j] = INVALID_BLOCKNO;
 			return i;
 		}
 	}
@@ -444,8 +446,18 @@ void addto_dir(INODE *pdirinode, INODE *pfinode, char *filename)
 	char name[255];
 
 	/* read directory attribute */
-	fs_read(pdirinode, 0, sizeof(DIR_ATTR), &da);
-	da.nr_files ++;
+	if(pdirinode->filesz == 0)
+	{
+		da.nr_files = 1;
+		da.nr_index = 1;
+		da.filesz = sizeof(DIR_ATTR);
+		fs_write(pdirinode, 0, sizeof(DIR_ATTR), &da);
+	}
+	else
+	{
+		fs_read(pdirinode, 0, sizeof(DIR_ATTR), &da);
+		da.nr_files ++;
+	}
 
 	/* init destination fileattr */
 	dfa.inode = pfinode->inodeno;
@@ -554,8 +566,8 @@ uint32_t opendir(char *filename)
 	int i, j;
 	DIR_ATTR da = {0};
 	FILE_ATTR fa[32] = {{0}};
-	char name[255];
-	int is_dir = 0, p = 1, q = 1, len = strlen(filename);
+	char name[255], path[255];
+	int is_dir = 0, p = 1, len = strlen(filename);
 	INODE *pinode = open_inode(0);
 
 	if(filename[0] != '/')
@@ -563,11 +575,28 @@ uint32_t opendir(char *filename)
 		return INVALID_INODENO;
 	}
 
-	while(q < len)
+	if(len == 1)
 	{
-		while(filename[q] != '/' && filename[q ++] != '\0');
-		is_dir = (filename[q - 1] == '/');
-		filename[q - 1] = '\0';
+		int t = pinode->inodeno;
+		close_inode(pinode);
+		return t;
+	}
+
+	while(p < len)
+	{
+		int find_sub = 0;
+		is_dir = 0;
+		for(i = p; i <= len; i++)
+		{
+			if(filename[i] == '/')
+			{
+				is_dir = 1;
+				path[i - p] = '\0';
+				break;
+			}
+			path[i - p] = filename[i];
+		}
+		p = i + 1;
 
 		/* read directory attribute */
 		fs_read(pinode, 0, sizeof(DIR_ATTR), &da);
@@ -581,35 +610,104 @@ uint32_t opendir(char *filename)
 				if(fa[j].dirty == 1)
 				{
 					fs_read(pinode, fa[j].filename_st, fa[j].len + 1, name);
-					if(strcmp(name, &filename[p]) == 0)
+					/* find file with the same name of path */
+					if(strcmp(name, path) == 0)
 					{
 						close_inode(pinode);
 						pinode = open_inode(fa[j].inode);
 						if(is_dir && pinode->filetype == 'd')
 						{
-
-							goto exitloop_opendir;
+							find_sub = 1;
+							if(p >= len)
+								return pinode->inodeno;
+							break;
 						}
-						else if(pinode->filetype == '-')
+						if(!is_dir && pinode->filetype == '-')
 							return fa[j].inode;
 					}
 				}
 			}
+			if(find_sub)
+				break;
 		}
-exitloop_opendir:
 
-		p = q;
+		if(!find_sub)
+		{
+			close_inode(pinode);
+			break;
+		}
 	}
 
 	return INVALID_INODENO;
 }
 
-int mkdir(char *pathname)
+int creat(char *pathname)
 {
+	char path[255];
+	int i, p = 0;
 	int ret = opendir(pathname);
-	if(ret != INVALID_INODENO)
+	if(ret != INVALID_INODENO || pathname[0] != '/')
 		return -1;
 
-	return 0;
+	while(pathname[i])
+	{
+		if(pathname[i ++] == '/')
+			p = i;
+	}
+
+	for(i = 0; i < p; i++)
+		path[i] = pathname[i];
+	path[i] = '\0';
+
+	int inodeno = opendir(path);
+	if(inodeno != INVALID_INODENO)
+	{
+		INODE *pdirinode = open_inode(inodeno);
+		uint32_t finode = apply_inode();
+		INODE *pfinode = open_inode(finode);
+		pfinode->filesz = 0;
+		pfinode->filetype = '-';
+		addto_dir(pdirinode, pfinode, &pathname[p]);
+		close_inode(pfinode);
+		close_inode(pdirinode);
+		return 0;
+	}
+
+	return -1;
+}
+
+int makedir(char *pathname)
+{
+	char path[255];
+	int i = 0, p;
+	int ret = opendir(pathname);
+	if(ret != INVALID_INODENO || pathname[0] != '/')
+		return -1;
+
+	while(pathname[i])
+	{
+		if(pathname[i ++] == '/')
+			p = i;
+	}
+
+	for(i = 0; i < p; i++)
+		path[i] = pathname[i];
+	path[i] = '\0';
+
+	int inodeno = opendir(path);
+	if(inodeno != INVALID_INODENO)
+	{
+		INODE *pdirinode = open_inode(inodeno);
+		uint32_t finode = apply_inode();
+		INODE *pfinode = open_inode(finode);
+		pfinode->filesz = 0;
+		pfinode->filetype = 'd';
+		addto_dir(pdirinode, pfinode, &pathname[p]);
+		close_inode(pfinode);
+		close_inode(pdirinode);
+		return 0;
+	}
+
+	return -1;
 }
 

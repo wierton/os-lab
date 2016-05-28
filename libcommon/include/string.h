@@ -2,9 +2,9 @@
 #define __STRING_H__
 
 void inline memcpy(void *dst, void *src, size_t len);
-void inline memset(void *dst, size_t len, uint8_t val);
+void inline memset(void *dst, uint32_t val, size_t len);
 size_t strlen(char *);
 int strcat(char *, char *);
-void inline memset(void *dst, size_t len, uint8_t val);
+int strcmp(char *dst, char *src);
 
 #endif

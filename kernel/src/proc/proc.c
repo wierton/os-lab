@@ -4,6 +4,7 @@
 #include "proc/elf.h"
 #include "proc/proc.h"
 #include "x86/memory.h"
+#include "device/fs.h"
 
 #define USR_STACK_SIZE 4096
 
@@ -51,7 +52,7 @@ HANDLE apply_ph()
 	return hProc;
 }
 
-HANDLE create_proc(uint32_t disk_off, ProcAttr *pa)
+HANDLE create_proc(char *path, ProcAttr *pa)
 /* input argument should be unsigned char *path */
 {
 	/* every process should be treated as thread(main thread)
@@ -70,7 +71,7 @@ HANDLE create_proc(uint32_t disk_off, ProcAttr *pa)
 
 	/* load this thread's page directory */
 	PDE *old_pdir = load_udir(hProc);
-	uint32_t eip = load_elf(hProc, disk_off);
+	uint32_t eip = load_elf(hProc, path);
 
 	/* reload old pdir */
 	load_dir(old_pdir);

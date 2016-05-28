@@ -1,12 +1,20 @@
 #include "common.h"
-
-#define DEBUG
-#ifdef DEBUG
+#include "string.h"
+#include "fs.h"
 
 #define va_to_pa(addr) ((addr) - 0xc0000000)
 
 static char *dststr = NULL;
 typedef void (*PRINTER)(char);
+
+#define assert(cond) \
+	do { \
+		if(!(cond)) \
+		{ \
+			printk("assertion fail: %d!", __LINE__); \
+			while(1); \
+		} \
+	} while(0)
 
 void init_serial()
 {
@@ -87,7 +95,7 @@ void printx(uint32_t val, PRINTER printer)
 	prints((void *)buf, printer);
 }
 
-int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER printer) {
+int vfprintf(const char *ctl, void **args, PRINTER printer) {
 	int i = 0, pargs = 0;
 	for(;ctl[i] != '\0'; i ++)
 	{
@@ -123,13 +131,13 @@ int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER pri
 	return 0;
 }
 
-void printk(const char *ctl, ...)
+void __attribute__((noinline)) printk(const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
 	vfprintf(ctl, args, serial_printc);
 }
 
-void sprintk(char *dst, const char *ctl, ...)
+void __attribute__((noinline)) sprintk(char *dst, const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
 	dststr = dst;
@@ -137,43 +145,6 @@ void sprintk(char *dst, const char *ctl, ...)
 	sprintc('\0');
 	dststr = NULL;
 }
-#endif
-
-/*端口号     读还是写    具体含义
- * 1F0H       读/写      用来传送读/写的数据(其内容是正在传输的一个字节的数据)
- * 1F1H       读         用来读取错误码
- * 1F2H       读/写      用来放入要读写的扇区数量
- * 1F3H       读/写      用来放入要读写的扇区号码
- * 1F4H       读/写      用来存放读写柱面的低8位字节
- * 1F5H       读/写      用来存放读写柱面的高2位字节(其高6位恒为0)
- * 1F6H       读/写      用来存放要读/写的磁盘号及磁头号
- *	--第7位     恒为1
- *	--第6位     恒为0
- *	--第5位     恒为1
- *	--第4位     为0代表第一块硬盘、为1代表第二块硬盘
- *	--第3~0位   用来存放要读/写的磁头号
- * 1f7H
- * -读          用来存放读操作后的状态
- *	--第7位     控制器忙碌
- *	--第6位     磁盘驱动器准备好了
- *	--第5位     写入错误
- *	--第4位     搜索完成
- *	--第3位     为1时扇区缓冲区没有准备好
- *	--第2位     是否正确读取磁盘数据
- *	--第1位     磁盘每转一周将此位设为1,
- *	--第0位     之前的命令因发生错误而结束
- *----------------------------------------------------------------
- *	-写         该位端口为命令端口,用来发出指定命令
- *	--为50h     格式化磁道
- *	--为20h     尝试读取扇区
- *	--为21h     无须验证扇区是否准备好而直接读扇区
- *	--为22h     尝试读取长扇区(用于早期的硬盘,每扇可能不是512字节,而是128字节到1024之间的值)
- *	--为23h     无须验证扇区是否准备好而直接读长扇区
- *	--为30h     尝试写扇区
- *	--为31h     无须验证扇区是否准备好而直接写扇区
- *	--为32h     尝试写长扇区
- *	--为33h     无须验证扇区是否准备好而直接写长扇区
- */
 
 void wait_disk()
 {
@@ -197,38 +168,258 @@ void read_section(uint32_t dst, int sectnum)
 	}
 }
 
-void read_disk(uint32_t dst, uint32_t offset, uint32_t size)
+int read_disk(void *dst, uint32_t offset, uint32_t size)
 {
-	int i, op = 0, ed = 0;
-	uint32_t off = offset / 512 + 9;
-	uint32_t td = dst - offset % 512;
-	uint32_t final = dst + size;
+	int i, j, op = 0, ed = 0;
+	uint32_t off = offset / 512;
+	uint32_t final = (uint32_t)dst + size;
+	i = (uint32_t)dst - offset % 512;
 
 	uint8_t sect[512];
-	for(; td < final; td += 512, off++)
+	for(i = (uint32_t)dst - offset % 512; i < final; i += 512)
 	{
-		read_section((uint32_t)sect, off);
-		op = max(td, dst);
-		ed = min(td + 512, final);
-		for(i = op; i < ed; i++)
+		read_section((uint32_t)sect, off++);
+		op = max(i, (uint32_t)dst);
+		ed = min(i + 512, final);
+		for(j = op; j < ed; j++)
 		{
-			((uint8_t *)i)[0] = sect[i - td];
+			((uint8_t *)j)[0] = sect[j - i];
 		}
 	}
+	return size;
+}
+
+INODE __attribute__((noinline)) *open_inode(uint32_t inodeno)
+{
+	static INODE inode;
+	read_disk(&inode, INODE_ST + inodeno * sizeof(INODE), sizeof(INODE));
+	return &inode;
+}
+
+void close_inode(INODE *pinode)
+{
+	return;
+}
+
+int get_disk_blockno(INODE *pinode, uint32_t file_blockst, uint32_t nr_block, uint32_t *buf)
+{
+	int i, count = 0;
+	int level[1024] = {0};
+	uint32_t addr[1024] = {0}, stno[1024] = {0};
+	uint32_t p = 0, q = 0;
+	uint32_t ll[4] = {L1_ST, L2_ST, L3_ST, L4_ST};
+	uint32_t lp[4] = {1, L2_ST - L1_ST, L3_ST - L2_ST, L4_ST - L3_ST};
+	uint32_t tbuf[BLOCKSZ / sizeof(uint32_t)];
+
+	if(nr_block > 512)
+		return 0;
+
+	for(i = 0; i < 10; i++)
+		if(i >= file_blockst && i < file_blockst + nr_block)
+		{
+			level[q] = 0;
+			stno[q] = i;
+			addr[q++] = pinode->nr_block[i];
+		}
+
+	for(i = 0; i < 3; i++)
+		if(max(ll[i], file_blockst) < min(ll[i + 1], file_blockst + nr_block))
+		{
+			level[q] = i + 1;
+			stno[q] = ll[i];
+			addr[q++] = pinode->nr_block[10 + i];
+		}
+
+	if(q == 0)
+		return 0;
+
+	while(p < q)
+	{
+		if(level[p] > 0)
+		{
+			uint32_t disk_off = FILE_ST + addr[p] * BLOCKSZ;
+			read_disk(tbuf, disk_off, sizeof(tbuf));
+			for(i = 0; i < sizeof(tbuf)/sizeof(uint32_t); i++)
+			{
+				level[q] = level[p] - 1;
+				stno[q] = stno[p] + i * lp[level[q]];
+				stno[q + 1] = stno[p] + (i + 1) * lp[level[q]];
+				addr[q] = tbuf[i];
+				if(max(stno[q], file_blockst) < min(stno[q + 1], file_blockst + nr_block))
+					q++;
+
+			}
+			p ++;
+			assert(p < 1024 && q < 1024);
+		}
+		else
+		{
+			if(level[p ++] == 0)
+				count ++;
+			if(count >= nr_block)
+			{
+				count = 0;
+				for(i = 0; i < q; i++)
+				{
+					if(level[i] == 0)
+					{
+						buf[count ++] = addr[i];
+					}
+				}
+				return count;
+			}
+		}
+	}
+	printk("end of get_disk_fileno\n");
+	count = 0;
+	for(i = 0; i < q; i++)
+	{
+		if(level[i] == 0)
+		{
+			buf[count ++] = addr[i];
+		}
+	}
+	return count;
+}
+
+int fs_read(INODE *pinode, uint32_t off, uint32_t size, void *buf)
+{
+	buf = (uint8_t *)buf;
+	int i, j, tsize, ed;
+	uint32_t stblockno, edblockno;
+	uint32_t block_addr[256];
+	uint32_t stno = off / BLOCKSZ, edno = (off + size - 1) / BLOCKSZ;
+	if(off >= pinode->filesz || size == 0)
+		return 0;
+	size = min(pinode->filesz, off + size) - off;
+	ed = off + size;
+
+	/* read the first block(given that some read operation on bytes less than 4096) */
+	tsize = min(BLOCKSZ - off % BLOCKSZ, size);
+	get_disk_blockno(pinode, stno, 1, &stblockno);
+	read_disk(buf, FILE_ST + stblockno * BLOCKSZ + off % BLOCKSZ, tsize);
+	buf += tsize;
+	off += tsize;
+	size -= tsize;
+	for(i = stno + 1; i < edno; i += 256)
+	{
+		int t = get_disk_blockno(pinode, i, min(256, edno - i), block_addr);
+		for(j = 0; j < t; j++)
+		{
+			read_disk(buf, FILE_ST + block_addr[j] * BLOCKSZ, BLOCKSZ);
+			buf += BLOCKSZ;
+			off += BLOCKSZ;
+			size -= BLOCKSZ;
+		}
+	}
+	/* read the last block */
+	tsize = ed - off;
+	get_disk_blockno(pinode, edno, 1, &edblockno);
+	read_disk(buf, FILE_ST + edblockno * BLOCKSZ + off % BLOCKSZ, tsize);
+	buf += tsize;
+	off += tsize;
+	size -= tsize;
+
+	return size;
+}
+
+uint32_t opendir(char *filename)
+{
+	int i, j;
+	DIR_ATTR da = {0};
+	FILE_ATTR fa[32] = {{0}};
+	char name[255], path[255];
+	int is_dir = 0, p = 1, len = strlen(filename);
+	INODE *pinode = open_inode(0);
+
+	if(filename[0] != '/')
+	{
+		return INVALID_INODENO;
+	}
+
+	if(len == 1)
+	{
+		int t = pinode->inodeno;
+		close_inode(pinode);
+		return t;
+	}
+
+	while(p < len)
+	{
+		int find_sub = 0;
+		is_dir = 0;
+		for(i = p; i <= len; i++)
+		{
+			if(filename[i] == '/')
+			{
+				is_dir = 1;
+				path[i - p] = '\0';
+				break;
+			}
+			path[i - p] = filename[i];
+		}
+		p = i + 1;
+
+		/* read directory attribute */
+		fs_read(pinode, 0, sizeof(DIR_ATTR), &da);
+	
+		for(i = 0; i < da.nr_index; i += 32)
+		{
+			int left = min(sizeof(fa), (da.nr_index - i) * sizeof(FILE_ATTR));
+			fs_read(pinode, sizeof(DIR_ATTR) + i * sizeof(FILE_ATTR), left, fa);
+			for(j = 0; j < left / sizeof(FILE_ATTR); j++)
+			{
+				if(fa[j].dirty == 1)
+				{
+					fs_read(pinode, fa[j].filename_st, fa[j].len + 1, name);
+					/* find file with the same name of path */
+					if(strcmp(name, path) == 0)
+					{
+						close_inode(pinode);
+						pinode = open_inode(fa[j].inode);
+						if(is_dir && pinode->filetype == 'd')
+						{
+							find_sub = 1;
+							if(p >= len)
+								return pinode->inodeno;
+							break;
+						}
+						if(!is_dir && pinode->filetype == '-')
+							return fa[j].inode;
+					}
+				}
+			}
+			if(find_sub)
+				break;
+		}
+
+		if(!find_sub)
+		{
+			close_inode(pinode);
+			break;
+		}
+	}
+
+	return INVALID_INODENO;
 }
 
 void loader()
 {
 	int i, j;
-	Elf32_Endr *elf = (Elf32_Endr *)0xA000;
+	Elf32_Endr *elf = (Elf32_Endr *)0x3000;
 	Elf32_Phdr *ph;
-	read_disk((uint32_t)elf, 0, 0x1000);
 
+	printk("Load Kernel!\n");
+	uint32_t inodeno = opendir("/kernel");
+	INODE *pinode = open_inode(inodeno);
+	
+	fs_read(pinode, 0, 0x1000, elf);
 	ph = (void *)elf + elf->e_phoff;
+	printk("%x %d\n", elf->e_entry, pinode->inodeno);
 
 	for(i = 0; i < elf->e_phnum; i++)
 	{
-		read_disk(va_to_pa(ph->p_vaddr), ph->p_offset, ph->p_filesz);
+		fs_read(pinode, ph->p_offset, ph->p_filesz, (void *)va_to_pa(ph->p_vaddr));
 		/*zero the memory [paddr + filesz, paddr + memsz)*/
 		for(j = va_to_pa(ph->p_vaddr) + ph->p_filesz; j < va_to_pa(ph->p_vaddr) + ph->p_memsz; j++)
 		{

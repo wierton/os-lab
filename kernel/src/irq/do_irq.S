@@ -32,17 +32,18 @@ do_irq:
 	pushal;
 
 	# switch to user's kernel stack
-	movl %esp, %eax;
-	movl %eax, old_esp;
-	movl cur_esp, %esp;
+	# movl %esp, %eax;
+	# movl %eax, old_esp;
+	# movl cur_esp, %esp;
 
 	# call irq_handle
-	pushl %eax;
+	# pushl %eax;
+	pushl %esp;
 	call irq_handle;
 	addl $0x4, %esp;
 
 	# switch back to user's stack
-	movl old_esp, %esp;
+	# movl old_esp, %esp;
 
 	popal;
 	addl $16, %esp;

@@ -1,6 +1,8 @@
 #include "common.h"
+#include "math.h"
 #include "x86/x86.h"
 #include "x86/memory.h"
+#include "device/fs.h"
 #include "device/disk.h"
 #include "proc/elf.h"
 #include "proc/proc.h"
@@ -12,17 +14,25 @@ void set_memh(HANDLE hProc, uint32_t pm_num, MEMH *pm);
 static MEMH memh[NR_MEMH];
 static uint32_t nr_memh = 0;
 
-uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
+uint32_t load_elf(HANDLE hProc, char *path)
 {
 	int i, j;
+	uint32_t inodeno = opendir(path);
+	INODE *pinode = open_inode(inodeno);
+	printk("%s %d %d\n", path, inodeno, pinode->inodeno);
+
 	Elf32_Endr elf;
 	Elf32_Phdr ph[10];
-	read_disk(((uint32_t)&elf), disk_start, sizeof(Elf32_Endr));
+	fs_read(pinode, 0, sizeof(Elf32_Endr), &elf);
 	assert(elf.e_phnum < 10 && elf.e_phentsize == sizeof(Elf32_Phdr));
-	read_disk(((uint32_t)ph), disk_start + elf.e_phoff, elf.e_phnum * elf.e_phentsize);
+	fs_read(pinode, elf.e_phoff, elf.e_phnum * elf.e_phentsize, ph);
 
 	mm_alloc(hProc, USER_STACK_ADDR - USER_STACK_SIZE, USER_STACK_SIZE);
 
+	for(i = 0; i < elf.e_phnum; i++)
+	{
+		printk("%x, %x, %x, %x, %x\n", ph[i].p_offset, ph[i].p_vaddr, ph[i].p_paddr, ph[i].p_filesz, ph[i].p_memsz);
+	}
 	/* load into memory */
 	for(i = 0; i < elf.e_phnum; i++)
 	{
@@ -41,7 +51,7 @@ uint32_t load_elf(HANDLE hProc, uint32_t disk_start)
 
 	for(i = 0; i < elf.e_phnum; i++)
 	{
-		read_disk(ph[i].p_vaddr, disk_start + ph[i].p_offset, ph[i].p_filesz);
+		fs_read(pinode, ph[i].p_offset, ph[i].p_filesz, (void *)(ph[i].p_vaddr));
 		for(j = ph[i].p_vaddr + ph[i].p_filesz; j < ph[i].p_vaddr + ph[i].p_memsz; j++)
 		{
 			((uint8_t *)j)[0] = 0;
@@ -77,7 +87,12 @@ void env_run(TrapFrame *tf)
 
 void load_game()
 {
+	char str[20] = "12345678900000000";
+	str[9] = 0;
+	printk("%s %d\n", str, strlen(str));
+	strcat(str, "0000");
+	printk("%s\n", str);
 	ProcAttr pa = {3};
-	HANDLE hGame = create_proc(DISK_START, &pa);
+	HANDLE hGame = create_proc("/testcase", &pa);
 	enter_proc(hGame);
 }

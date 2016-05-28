@@ -27,6 +27,14 @@ static inline void out_word(short port, uint16_t data)
 	asm volatile("out %0, %1"::"a"(data), "d"(port));
 }
 
+static inline void outsl(int port, const void *addr, int cnt)
+{
+	asm volatile("cld;repne;outsl"  :
+			 "=S" (addr), "=c" (cnt):
+			 "d" (port), "0" (addr), "1" (cnt) :
+			 "cc");
+}
+
 static inline uint8_t in_byte(short port)
 {
 	uint8_t data;

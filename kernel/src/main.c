@@ -18,6 +18,7 @@ void init_segment();
 void init_proc();
 void init_thread();
 void init_wlist();
+void init_fs();
 void load_game();
 
 void init_cond();
@@ -48,10 +49,14 @@ void init_cond()
 	init_thread();
 	init_wlist();
 	init_font();
+	init_disk();
+	init_fs();
+
+	printk("Load Testcase!\n");
 
 	/* create idle process */
 	ProcAttr pa = {4};
-	create_proc(IDLE_START, &pa);
+	create_proc("/idle", &pa);
 
 	/* load user process */
 	load_game();

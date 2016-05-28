@@ -34,7 +34,7 @@ typedef struct {
 	uint32_t p_align;
 } Elf32_Phdr;
 
-uint32_t load_elf(HANDLE hProc, uint32_t disk_start);
+uint32_t load_elf(HANDLE hProc, char *path);
 void set_usrtf(uint32_t eip, TrapFrame *tf);
 void env_run(TrapFrame *tf);
 

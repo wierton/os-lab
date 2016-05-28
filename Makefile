@@ -26,8 +26,8 @@ include kernel/Makefile.part
 # TESTCASE := fork
 # TESTCASE := fork_sleep
 # TESTCASE := exit
-# TESTCASE := thread
-TESTCASE := sem
+TESTCASE := thread
+# TESTCASE := sem
 
 include testcase/Makefile.part
 
@@ -42,12 +42,14 @@ format  : $(format_BIN)
 ENTRY := $(test_BIN)
 # ENTRY := $(game_BIN)
 
-$(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
-	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)
+#$(IMG): $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY)
+#	@cat $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(ENTRY) > $(IMG)
 
-disk: $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(test_BIN) $(game_BIN)
+$(IMG): $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(test_BIN) $(game_BIN)
 	@rm -rf $(IMG)
 	@$(format_BIN) $(IMG) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(test_BIN) $(game_BIN)
+
+disk:$(IMG)
 
 debug: $(IMG)
 	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
