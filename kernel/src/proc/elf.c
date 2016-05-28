@@ -19,7 +19,6 @@ uint32_t load_elf(HANDLE hProc, char *path)
 	int i, j;
 	uint32_t inodeno = opendir(path);
 	INODE *pinode = open_inode(inodeno);
-	printk("%s %d %d\n", path, inodeno, pinode->inodeno);
 
 	Elf32_Endr elf;
 	Elf32_Phdr ph[10];
@@ -29,10 +28,6 @@ uint32_t load_elf(HANDLE hProc, char *path)
 
 	mm_alloc(hProc, USER_STACK_ADDR - USER_STACK_SIZE, USER_STACK_SIZE);
 
-	for(i = 0; i < elf.e_phnum; i++)
-	{
-		printk("%x, %x, %x, %x, %x\n", ph[i].p_offset, ph[i].p_vaddr, ph[i].p_paddr, ph[i].p_filesz, ph[i].p_memsz);
-	}
 	/* load into memory */
 	for(i = 0; i < elf.e_phnum; i++)
 	{
@@ -87,11 +82,6 @@ void env_run(TrapFrame *tf)
 
 void load_game()
 {
-	char str[20] = "12345678900000000";
-	str[9] = 0;
-	printk("%s %d\n", str, strlen(str));
-	strcat(str, "0000");
-	printk("%s\n", str);
 	ProcAttr pa = {3};
 	HANDLE hGame = create_proc("/testcase", &pa);
 	enter_proc(hGame);
