@@ -415,7 +415,7 @@ void loader()
 	
 	fs_read(pinode, 0, 0x1000, elf);
 	ph = (void *)elf + elf->e_phoff;
-	printk("%x %d\n", elf->e_entry, pinode->inodeno);
+	printk("%x %d\r", elf->e_entry, pinode->inodeno);
 
 	for(i = 0; i < elf->e_phnum; i++)
 	{

@@ -85,7 +85,7 @@ int fs_read(INODE *pinode, uint32_t off, uint32_t size, void *buf);
 int fs_write(INODE *pinode, uint32_t off, uint32_t size, void *buf);
 void addto_dir(INODE *pdirinode, INODE *pfinode, char *filename);
 uint32_t opendir(char *filename);
-int creat(char *pathname);
+uint32_t creat(char *pathname);
 int makedir(char *pathname);
 
 #endif

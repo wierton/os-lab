@@ -9,7 +9,7 @@
 #define IDE_DF		0x20
 #define IDE_ERR		0x01
 
-static int diskno = 1;
+static int diskno = 0;
 
 void __attribute__((noinline)) wait_disk()
 {

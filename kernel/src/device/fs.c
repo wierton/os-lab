@@ -606,7 +606,7 @@ uint32_t opendir(char *filename)
 	return INVALID_INODENO;
 }
 
-int creat(char *pathname)
+uint32_t creat(char *pathname)
 {
 	char path[255];
 	int i = 0, p = 0;
@@ -636,7 +636,7 @@ int creat(char *pathname)
 		addto_dir(pdirinode, pfinode, &pathname[p]);
 		close_inode(pfinode);
 		close_inode(pdirinode);
-		return 0;
+		return finode;
 	}
 
 	return -1;

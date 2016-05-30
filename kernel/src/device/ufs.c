@@ -37,9 +37,10 @@ int open(TrapFrame *tf)
 	{
 		if((tf->edx & MODE_G) != 0)
 		{
-			return creat((void *)(tf->ebx));
+			ret = creat((void *)(tf->ebx));
 		}
-		return -1;
+		else
+			return -1;
 	}
 
 	for(i = 0; i < NR_FCB; i++)
@@ -71,7 +72,7 @@ int read(TrapFrame *tf)
 {
 	uint32_t fd = tf->ebx;
 	assert(fd < NR_FCB);
-	if((fcb[fd].mode & MODE_R) == 0)
+	if((fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
 		return -1;
 
 	int size = fs_read(fcb[fd].pinode, fcb[fd].offset, tf->edx, (void *)(tf->ecx));
@@ -84,7 +85,7 @@ int write(TrapFrame *tf)
 {
 	uint32_t fd = tf->ebx;
 	assert(fd < NR_FCB);
-	if((fcb[fd].mode & MODE_R) == 0)
+	if((fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
 		return -1;
 
 	int size = fs_write(fcb[fd].pinode, fcb[fd].offset, tf->edx, (void *)(tf->ecx));
