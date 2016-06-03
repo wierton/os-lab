@@ -26,3 +26,8 @@ int list(char *path)
 {
 	return syscall(0x18, path);
 }
+
+int lseek(int fd, int offset, int whence)
+{
+	return syscall(0x19, fd, offset, whence);
+}

@@ -60,6 +60,9 @@ void init_cond()
 	ProcAttr pa = {4};
 	create_proc("/idle", &pa);
 
+	ProcAttr gpa = {3};
+	create_proc("/game", &gpa);
+
 	/* load user process */
 	load_game();
 	while(1);

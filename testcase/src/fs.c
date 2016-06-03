@@ -4,17 +4,12 @@
 
 int main()
 {
-	int i;
-	int buf[256], tbuf[256];
-	int fd = open("/testcase", 0, MODE_R | MODE_W);
-	read(fd, buf, sizeof(buf));
+	char buf[256] = "abcdefghijklmnopqrstuvwxyz", tbuf[256];
 	list("/");
 	list("/usr/");
 	list("/usr/john/");
 
-	fd = open("/myfile", 0, MODE_R | MODE_W | MODE_G);
-	for(i = 0; i < 256; i++)
-		buf[i] = i;
+	int fd = open("/myfile", 0, MODE_R | MODE_W | MODE_G);
 	write(fd, buf, sizeof(buf));
 	read(fd, tbuf, sizeof(tbuf));
 /*	for(i = 0; i < 256; i++)

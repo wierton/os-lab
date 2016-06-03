@@ -13,7 +13,7 @@ SYSCALL_FUN syscall_fun[NR_SYSCALL] =
 /* 0b */ pthread_create, pthread_join, sem_wait, sem_post,
 /* 10 */ sem_init, sem_destroy, inv, inv,
 /* 14 */ open, close, read, write,
-/* 18 */ list, inv, inv, inv,
+/* 18 */ list, lseek, inv, inv,
 /* 1a */ inv, inv, inv, inv
 };
 

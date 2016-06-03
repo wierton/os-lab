@@ -1,6 +1,10 @@
 #ifndef __SYS_H__
 #define __SYS_H__
 
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
 #define MODE_R (1 << 0)
 #define MODE_W (1 << 1)
 #define MODE_G (1 << 2)

@@ -16,6 +16,7 @@ int open(TrapFrame *tf);
 int close(TrapFrame *tf);
 int read(TrapFrame *tf);
 int write(TrapFrame *tf);
+int lseek(TrapFrame *tf);
 
 int list(TrapFrame *tf);
 

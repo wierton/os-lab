@@ -6,6 +6,10 @@
 
 #define NR_FCB 128
 
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
 #define MODE_R (1 << 0)
 #define MODE_W (1 << 1)
 #define MODE_G (1 << 2)
@@ -51,6 +55,8 @@ int open(TrapFrame *tf)
 			fcb[i].mode = tf->edx;
 			fcb[i].offset = 0;
 			fcb[i].pinode = open_inode(ret);
+			if(fcb[i].pinode->filetype == 'd')
+				return -1;
 			return i;
 		}
 	}
@@ -61,7 +67,8 @@ int open(TrapFrame *tf)
 int close(TrapFrame *tf)
 {
 	uint32_t fd = tf->ebx;
-	assert(fd < NR_FCB);
+	if(fd >= NR_FCB)
+		return -1;
 	fcb[fd].dirty = 0;
 	close_inode(fcb[fd].pinode);
 	return 0;
@@ -71,8 +78,7 @@ int close(TrapFrame *tf)
 int read(TrapFrame *tf)
 {
 	uint32_t fd = tf->ebx;
-	assert(fd < NR_FCB);
-	if((fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
+	if(fd >= NR_FCB || (fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
 		return -1;
 
 	int size = fs_read(fcb[fd].pinode, fcb[fd].offset, tf->edx, (void *)(tf->ecx));
@@ -84,11 +90,27 @@ int read(TrapFrame *tf)
 int write(TrapFrame *tf)
 {
 	uint32_t fd = tf->ebx;
-	assert(fd < NR_FCB);
-	if((fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
+	if(fd >= NR_FCB || (fcb[fd].mode & MODE_R) == 0 || fcb[fd].dirty == 0)
 		return -1;
 
 	int size = fs_write(fcb[fd].pinode, fcb[fd].offset, tf->edx, (void *)(tf->ecx));
 	fcb[fd].offset += size;
 	return size;
+}
+
+/*  off_t lseek(int fd, off_t offset, int whence); */
+int lseek(TrapFrame *tf)
+{
+	uint32_t fd = tf->ebx;
+	if(fd >= NR_FCB)
+		return -1;
+
+	switch(tf->edx)
+	{
+		case SEEK_SET:fcb[fd].offset = tf->ebx;break;
+		case SEEK_CUR:fcb[fd].offset += tf->ebx;break;
+		case SEEK_END:fcb[fd].offset = fcb[fd].pinode->filesz + tf->ebx;break;
+		default: break;
+	}
+	return fcb[fd].offset;
 }
