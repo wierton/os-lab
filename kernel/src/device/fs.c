@@ -7,11 +7,12 @@
 
 uint32_t bitmap[128];
 INODE inode[128];
+uint8_t inode_dirty[128];
 
 void init_fs()
 {
+	memset(inode_dirty, 0, sizeof(inode_dirty));
 	read_disk(bitmap, BITMAP_ST, sizeof(bitmap));
-	read_disk(inode, INODE_ST, sizeof(inode));
 }
 
 void clear_block(uint32_t blockno)
@@ -52,12 +53,28 @@ void free_block(uint32_t nr_block)
 
 INODE *open_inode(uint32_t inodeno)
 {
-	assert(inodeno < sizeof(inode)/sizeof(inode[0]));;
-	return &inode[inodeno];
+	int i;
+	assert(inodeno < NR_INODE);
+	for(i = 0; i < sizeof(inode) / sizeof(inode[0]); i++)
+	{
+		if(!inode_dirty[i])
+		{
+			inode_dirty[i] = 1;
+			read_disk(&inode[i], INODE_ST + inodeno * sizeof(INODE), sizeof(INODE));
+			printk("{%d, %d}\n", i, inode[i].inodeno);
+			return &inode[i];
+		}
+	}
+	assert(0);
+	return NULL;
 }
 
 void close_inode(INODE *pinode)
 {
+	int i = (int)(pinode - &inode[0]);
+	write_disk(&inode[i], INODE_ST + pinode->inodeno * sizeof(INODE), sizeof(INODE));
+	inode_dirty[i] = 0;
+	printk("(%d, %d)..\n", i, pinode->inodeno);
 	return;
 }
 
@@ -537,6 +554,7 @@ uint32_t opendir(char *filename)
 
 	if(filename[0] != '/')
 	{
+		close_inode(pinode);
 		return INVALID_INODENO;
 	}
 
@@ -584,11 +602,18 @@ uint32_t opendir(char *filename)
 						{
 							find_sub = 1;
 							if(p >= len)
-								return pinode->inodeno;
+							{
+								int tmp = pinode->inodeno;
+								close_inode(pinode);
+								return tmp;
+							}
 							break;
 						}
 						if(!is_dir && pinode->filetype == '-')
+						{
+							close_inode(pinode);
 							return fa[j].inode;
+						}
 					}
 				}
 			}
