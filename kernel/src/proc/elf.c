@@ -52,6 +52,7 @@ uint32_t load_elf(HANDLE hProc, char *path)
 			((uint8_t *)j)[0] = 0;
 		}
 	}
+	close_inode(pinode);
 
 	return elf.e_entry;
 }

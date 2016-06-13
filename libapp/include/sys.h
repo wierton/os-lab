@@ -13,6 +13,7 @@ int open(const char *pathname, int flags, int mode);
 int close(int fd);
 uint32_t read(int fd, void *buf, uint32_t count);
 uint32_t write(int fd, const void *buf, uint32_t count);
+int lseek(int fd, int offset, int whence);
 
 int list(char *path);
 

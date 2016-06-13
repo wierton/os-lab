@@ -641,7 +641,7 @@ uint32_t opendir(char *filename)
 	return INVALID_INODENO;
 }
 
-int creat(char *pathname)
+uint32_t creat(char *pathname)
 {
 	char path[255];
 	int i, p = 0;

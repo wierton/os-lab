@@ -107,9 +107,9 @@ int lseek(TrapFrame *tf)
 
 	switch(tf->edx)
 	{
-		case SEEK_SET:fcb[fd].offset = tf->ebx;break;
-		case SEEK_CUR:fcb[fd].offset += tf->ebx;break;
-		case SEEK_END:fcb[fd].offset = fcb[fd].pinode->filesz + tf->ebx;break;
+		case SEEK_SET:fcb[fd].offset = tf->ecx;break;
+		case SEEK_CUR:fcb[fd].offset += tf->ecx;break;
+		case SEEK_END:fcb[fd].offset = fcb[fd].pinode->filesz + tf->ecx;break;
 		default: break;
 	}
 	return fcb[fd].offset;

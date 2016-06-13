@@ -25,20 +25,27 @@ void clear_block(uint32_t blockno)
 uint32_t apply_block()
 {
 	int i, j;
-	for(i = 0; i < sizeof(bitmap)/sizeof(uint32_t); i++)
+	static int cur_st = 0;
+	while(cur_st < BITMAP_SZ / sizeof(uint32_t))
 	{
-		if(bitmap[i] != 0xffffffff)
+		for(i = 0; i < sizeof(bitmap)/sizeof(uint32_t); i++)
 		{
-			for(j = 31; j >= 0; j--)
+			if(bitmap[i] != 0xffffffff)
 			{
-				if((1 & (bitmap[i] >> j)) == 0)
+				for(j = 31; j >= 0; j--)
 				{
-					uint32_t mask = 1 << j;
-					bitmap[i] |= mask;
-					return i * 32 + (31 - j);
+					if((1 & (bitmap[i] >> j)) == 0)
+					{
+						uint32_t mask = 1 << j;
+						bitmap[i] |= mask;
+						return cur_st * 32 + i * 32 + (31 - j);
+					}
 				}
 			}
 		}
+		write_disk(bitmap, BITMAP_ST + cur_st * sizeof(uint32_t), sizeof(bitmap));
+		cur_st += sizeof(bitmap)/sizeof(uint32_t);
+		read_disk(bitmap, BITMAP_ST + cur_st * sizeof(uint32_t), sizeof(bitmap));
 	}
 	assert(0);
 	return 0xffffffff;
@@ -46,9 +53,13 @@ uint32_t apply_block()
 
 void free_block(uint32_t nr_block)
 {
-	assert(nr_block < sizeof(bitmap)/sizeof(uint32_t));
+	uint32_t tmp = nr_block / 32;
+	uint32_t tmp_bitmap;
+	assert(nr_block < BITMAP_SZ/sizeof(uint32_t));
+	read_disk(&tmp_bitmap, BITMAP_ST + tmp * sizeof(uint32_t), sizeof(uint32_t));
 	uint32_t mask = ~(1 << (31 - (nr_block % 32)));
-	bitmap[nr_block / 32] &= mask;
+	tmp_bitmap &= mask;
+	read_disk(&tmp_bitmap, BITMAP_ST + tmp * sizeof(uint32_t), sizeof(uint32_t));
 }
 
 INODE *open_inode(uint32_t inodeno)
@@ -61,7 +72,6 @@ INODE *open_inode(uint32_t inodeno)
 		{
 			inode_dirty[i] = 1;
 			read_disk(&inode[i], INODE_ST + inodeno * sizeof(INODE), sizeof(INODE));
-			printk("{%d, %d}\n", i, inode[i].inodeno);
 			return &inode[i];
 		}
 	}
@@ -74,7 +84,6 @@ void close_inode(INODE *pinode)
 	int i = (int)(pinode - &inode[0]);
 	write_disk(&inode[i], INODE_ST + pinode->inodeno * sizeof(INODE), sizeof(INODE));
 	inode_dirty[i] = 0;
-	printk("(%d, %d)..\n", i, pinode->inodeno);
 	return;
 }
 
@@ -621,11 +630,9 @@ uint32_t opendir(char *filename)
 				break;
 		}
 
+		close_inode(pinode);
 		if(!find_sub)
-		{
-			close_inode(pinode);
 			break;
-		}
 	}
 
 	return INVALID_INODENO;
