@@ -1,6 +1,9 @@
-# gcc version 4.9.3 (Ubuntu 4.9.3-5ubuntu1)
+# OS-lab 2016 March-June
 
-feature:
+* compiler:
+ * gcc version 4.9.3 (Ubuntu 4.9.3-5ubuntu1)
+
+# introduction
 * lab-1 mbr 和　中断向量
  * 调试所需函数:assert, printk
 * lab-2 分页
