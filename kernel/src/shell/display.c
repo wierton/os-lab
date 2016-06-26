@@ -45,9 +45,9 @@ void write_char(char ch)
 		case '\b':
 				  if(caretx > 0)
 				  {
-					  cbuf[caretx][carety] = '\0';
-					  draw_character(' ', caretx * D_CHAR_W, carety * D_CHAR_W, 0xffffffff, TIMES);
 					  caretx --;
+					  cbuf[caretx][carety] = '\0';
+					  draw_character(' ', (caretx + 1) * D_CHAR_W, carety * D_CHAR_W, 0xffffffff, TIMES);
 				  }
 				  return;
 	}

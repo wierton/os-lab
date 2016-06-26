@@ -16,10 +16,12 @@ void keyboard_event(uint32_t code)
 	{
 		key_code = code;
 	}
+	void update_buf(char ch);
 	void write_char(char ch);
-	if(key_code != 0xe0)
+	if(key_code != 0xe0 && ((key_code & 0x80) == 0))
 	{
 		write_char(switch_to_ascii(key_code));
+		update_buf(switch_to_ascii(key_code));
 		//printk("%x\t", key_code);
 	}
 	trav = 0;
@@ -45,11 +47,20 @@ char read_ascii()
 
 char switch_to_ascii(uint32_t code)
 {
-	switch(code & 0xffff)
+	switch(code & 0xff7f)
 	{
 		case 0x1c: return '\n';
 		case 0x39: return ' ';
 		case 0x0e: return '\b';
+		case 0x1a: return '[';
+		case 0x1b: return ']';
+		case 0x27: return ';';
+		case 0x28: return '\'';
+		case 0x33: return ',';
+		case 0x34: return '.';
+		case 0x35: return '/';
+		case 0x2b: return '\\';
+		case 0x0c: return '-';
 		case 0x1e: return 'a';
 		case 0x30: return 'b';
 		case 0x2e: return 'c';
@@ -73,9 +84,9 @@ char switch_to_ascii(uint32_t code)
 		case 0x16: return 'u';
 		case 0x2f: return 'v';
 		case 0x11: return 'w';
-		case 0x01: return 'x';
-		case 0x2d: return 'y';
-		case 0x15: return 'z';
+		case 0x2d: return 'x';
+		case 0x15: return 'y';
+		case 0x2c: return 'z';
 		case 0x0b: return '0';
 		case 0x02: return '1';
 		case 0x03: return '2';

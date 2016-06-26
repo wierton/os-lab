@@ -644,7 +644,7 @@ uint32_t creat(char *pathname)
 	int i = 0, p = 0;
 	int ret = opendir(pathname);
 	if(ret != INVALID_INODENO || pathname[0] != '/')
-		return -1;
+		return ret;
 
 	while(pathname[i])
 	{
@@ -712,15 +712,23 @@ int makedir(char *pathname)
 int list(TrapFrame *tf)
 {
 	int i, j, total_size = 0, count = 0;
-	char *name[255];
+	char name[255];
 	DIR_ATTR da = {0};
 	FILE_ATTR fa[32] = {{0}};
 	char *path = (char *)tf->ebx;
 	uint32_t inodeno = opendir(path);
 	if(inodeno == INVALID_INODENO)
 		return -1;
+	printk("directory %s:\n\n", path);
 
 	INODE *pinode = open_inode(inodeno);
+	if(tf->edx == 1)
+	{
+		if(tf->ecx == 1)
+			printk("%c %d\t%s\n", 'd', pinode->filesz, ".");
+		else
+			printk("%s \t", ".");
+	}
 
 	fs_read(pinode, 0, sizeof(DIR_ATTR), &da);
 
@@ -734,7 +742,13 @@ int list(TrapFrame *tf)
 			{
 				fs_read(pinode, fa[j].filename_st, fa[j].len + 1, name);
 				INODE *pfinode = open_inode(fa[j].inode);
-				printk("%c %d\t%s\n", pfinode->filetype, pfinode->filesz, name);
+				if(name[0] != '.' || tf->edx == 1)
+				{
+					if(tf->ecx == 1)
+						printk("%c %d\t%s\n", pfinode->filetype, pfinode->filesz, name);
+					else
+						printk("%s \t", name);
+				}
 				total_size += pfinode->filesz;
 				count ++;
 				close_inode(pfinode);
@@ -742,7 +756,9 @@ int list(TrapFrame *tf)
 		}
 	}
 
-	printk("total:%d, size:%d\n\n", count, total_size);
+	if(tf->ecx == 1)
+		printk("total:%d, size:%d\n", count, total_size);
+	printk("\n");
 	close_inode(pinode);
 	return 0;
 }

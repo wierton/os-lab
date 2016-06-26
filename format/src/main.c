@@ -179,6 +179,11 @@ int main(int argv, char *args[])
 	addto_dir(pinode, pninode, "nick");
 	printf("%s, %d\n", "/usr/nick", opendir("/usr/nick"));
 
+	creat("/test.txt");
+	char str[] = "abcdefghijklmnopqrstuvwxyz";
+	int testinode = opendir("/test.txt");
+	printf("%s, %d\n", "/test.txt", testinode);
+	fs_write(&inode[testinode], 0, 26, str);
 	creat("/usr/a.txt");
 	printf("%s, %d\n", "/usr/a.txt", opendir("/usr/a.txt"));
 	makedir("/usr/john");

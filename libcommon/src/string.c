@@ -30,6 +30,13 @@ size_t strlen(char *str)
 	return ((size_t)(ptr - str - 1));
 }
 
+size_t strcpy(char *dtr, char *str)
+{
+	char *ptr = str;
+	while(*ptr) {*dtr ++ = *ptr ++;};
+	return ((size_t)(ptr - str - 1));
+}
+
 int strcat(char *dst, char *src)
 {
 	int i, dlen = strlen(dst), slen = strlen(src);
@@ -41,8 +48,9 @@ int strcat(char *dst, char *src)
 char *strtok(char *str, char ch)
 {
 	char *ptr = str;
-	while(*ptr && *ptr++ != ch);
+	while(*ptr && *ptr != ch) {ptr ++;};
 	if(*ptr == 0)
 		return NULL;
+	*ptr = 0;
 	return ptr + 1;
 }

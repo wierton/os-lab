@@ -87,5 +87,5 @@ void addto_dir(INODE *pdirinode, INODE *pfinode, char *filename);
 uint32_t opendir(char *filename);
 uint32_t creat(char *pathname);
 int makedir(char *pathname);
-
+int list(TrapFrame *tf);
 #endif
