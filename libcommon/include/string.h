@@ -6,5 +6,6 @@ void inline memset(void *dst, uint32_t val, size_t len);
 size_t strlen(char *);
 int strcat(char *, char *);
 int strcmp(char *dst, char *src);
+char *strtok(char *str, char ch);
 
 #endif

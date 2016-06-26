@@ -20,6 +20,8 @@ void draw_character(char ch, int x, int y, uint32_t color, uint8_t times)
 			{
 				vmem[0] = color;
 			}
+			else
+				vmem[0] = 0;
 		}
 
 }

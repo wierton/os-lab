@@ -1,6 +1,8 @@
 #include "common.h"
 #include "x86/x86.h"
 
+void write_char(char ch);
+
 static char *dststr = NULL;
 typedef void (*PRINTER)(char);
 
@@ -126,7 +128,7 @@ int __attribute__((noinline)) vfprintf(const char *ctl, void **args, PRINTER pri
 void __attribute__((noinline)) printk(const char *ctl, ...)
 {
 	void **args = ((void **)(&ctl)) + 1;
-	vfprintf(ctl, args, serial_printc);
+	vfprintf(ctl, args, write_char);
 }
 
 void __attribute__((noinline)) sprintk(char *dst, const char *ctl, ...)
@@ -148,7 +150,7 @@ void __attribute__((noinline)) vsprintk(char *dst, const char *ctl, void **args)
 
 int sys_printc(TrapFrame *tf)
 {
-	serial_printc(tf->ebx);
+	write_char(tf->ebx);
 	return 0;
 }
 
@@ -157,7 +159,7 @@ int sys_prints(TrapFrame *tf)
 	int i;
 	for(i = 0; i < tf->edx; i++)
 	{
-		serial_printc(((char *)(i + tf->ecx))[0]);
+		write_char(((char *)(i + tf->ecx))[0]);
 	}
 	return 0;
 }

@@ -1,4 +1,4 @@
-.PHNOY: count run clean boot game kernel idle lib submit gdb debug test disk
+.PHNOY: count run clean boot game kernel idle lib submit gdb debug test disk convert
 
 CC := gcc-4.9 # this version is ok
 LD := ld
@@ -71,3 +71,6 @@ count:
 
 submit: clean
 	@cd .. && tar cvj $(shell pwd | grep -o '[^/]*$$') > 141242068.tar.bz2
+
+convert: $(IMG)
+	VBoxManage convertfromraw $(IMG) $(IMG:.img=.vdi)

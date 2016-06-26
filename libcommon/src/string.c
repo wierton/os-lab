@@ -37,3 +37,12 @@ int strcat(char *dst, char *src)
 		dst[i + dlen] = src[i];
 	return 0;
 }
+
+char *strtok(char *str, char ch)
+{
+	char *ptr = str;
+	while(*ptr && *ptr++ != ch);
+	if(*ptr == 0)
+		return NULL;
+	return ptr + 1;
+}
