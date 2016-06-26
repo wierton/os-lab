@@ -3,6 +3,7 @@
 
 #define INVALID_SCANCODE 0xffffffff
 
+static int shift = 0;
 static uint32_t key_code, trav = 0;
 char switch_to_ascii(uint32_t code);
 
@@ -16,14 +17,21 @@ void keyboard_event(uint32_t code)
 	{
 		key_code = code;
 	}
-	void update_buf(char ch);
+	void update_buf(int ch);
 	void write_char(char ch);
+	void call_history(int ch);
 	if(key_code != 0xe0 && ((key_code & 0x80) == 0))
 	{
 		write_char(switch_to_ascii(key_code));
 		update_buf(switch_to_ascii(key_code));
 		//printk("%x\t", key_code);
 	}
+	if((key_code >> 8) == 0xe0)
+		call_history(key_code);
+	if(key_code == 0x2a)
+		shift = 1;
+	if(key_code == (0x2a | 0x80))
+		shift = 0;
 	trav = 0;
 }
 
@@ -52,14 +60,14 @@ char switch_to_ascii(uint32_t code)
 		case 0x1c: return '\n';
 		case 0x39: return ' ';
 		case 0x0e: return '\b';
-		case 0x1a: return '[';
-		case 0x1b: return ']';
-		case 0x27: return ';';
-		case 0x28: return '\'';
-		case 0x33: return ',';
-		case 0x34: return '.';
-		case 0x35: return '/';
-		case 0x2b: return '\\';
+		case 0x1a: return shift ? '{' : '[';
+		case 0x1b: return shift ? '}' : ']';
+		case 0x27: return shift ? ':' : ';';
+		case 0x28: return shift ? '"' : '\'';
+		case 0x33: return shift ? '<' : ',';
+		case 0x34: return shift ? '>' : '.';
+		case 0x35: return shift ? '?' : '/';
+		case 0x2b: return shift ? '|' : '\\';
 		case 0x0c: return '-';
 		case 0x1e: return 'a';
 		case 0x30: return 'b';
