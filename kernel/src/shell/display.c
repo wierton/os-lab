@@ -2,9 +2,17 @@
 #include "shell/comarg.h"
 #include "font/font.h"
 #include "device/time.h"
+#include "x86/x86.h"
 
+int back_st;
 int caretx = 0, carety = 0;
 char cbuf[CHAR_R][CHAR_L];
+
+int set_backst(int val)
+{
+	back_st = val;
+	return 0;
+}
 
 void overload()
 {
@@ -43,7 +51,7 @@ void write_char(char ch)
 		case '\r':caretx = 0;return;
 		case '\t':caretx = (caretx + 7) & (~7);return;
 		case '\b':
-				  if(caretx > 0)
+				  if(caretx > back_st)
 				  {
 					  caretx --;
 					  cbuf[caretx][carety] = '\0';
@@ -117,7 +125,20 @@ void init_console()
 			cbuf[i][j] = 0;
 			draw_character('\0', i * D_CHAR_W, j * D_CHAR_W, 0xffffffff, TIMES);
 		}
-	printk("Init Console ...\n/>");
+	printk("Init Console ...\n");
+	set_backst(2);
+	extern int forbid_switch;
+	forbid_switch = 1;
+}
+
+int shell(TrapFrame *tf)
+{
+	extern int forbid_switch, user_mode;
+	asm volatile("sti");
+	user_mode = 0;
+	forbid_switch = 1;
+	printk("/>");
+	set_backst(2);
 	while(1)
 	{
 		show_caret();
