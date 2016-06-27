@@ -19,6 +19,17 @@ int main()
 		invalidate();
 	}
 	*/
-	while(1) {asm volatile("movl $0x1a,%eax; int $0x80");}
+	while(1) {
+		int ret = -1;
+		ret = syscall(0x1b);
+		//printf("%d, ", ret);
+		if(ret == 1)
+			asm volatile("movl $0x1a,%eax; int $0x80");
+		else if(ret == 0)
+		{
+			printf("idle has been started!\n");
+			break;
+		}
+	}
 	return 0;
 }

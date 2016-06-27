@@ -24,6 +24,8 @@ void init_console();
 void load_game();
 void init_cond();
 
+void enter_proc(HANDLE);
+
 int shell(TrapFrame *tf);
 
 extern uint32_t _stack_end_;
@@ -59,8 +61,8 @@ void init_cond()
 
 	/* create idle process */
 	ProcAttr pa = {4};
-	create_proc("/idle", &pa);
-	shell(NULL);
+	HANDLE hProc = create_proc("/idle", &pa);
+	enter_proc(hProc);
 
 	while(1);
 }

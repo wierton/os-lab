@@ -8,6 +8,8 @@ int back_st;
 int caretx = 0, carety = 0;
 char cbuf[CHAR_R][CHAR_L];
 
+void block_curt();
+
 int set_backst(int val)
 {
 	back_st = val;
@@ -33,6 +35,13 @@ void overload()
 
 void write_char(char ch)
 {
+	/* for debug */
+	/*
+	void serial_printc(char);
+	serial_printc(ch);
+	return;
+	*/
+
 	static int color = 0xffffffff;
 	static int cx = 0, cy = 0;
 	draw_character(cbuf[cx][cy], cx * D_CHAR_W, cy * D_CHAR_W, color, TIMES);
@@ -134,6 +143,7 @@ void init_console()
 
 int shell(TrapFrame *tf)
 {
+	block_curt();
 	extern int forbid_switch, user_mode;
 	user_mode = 0;
 	forbid_switch = 1;

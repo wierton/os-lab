@@ -26,7 +26,6 @@ void irq_handle(TrapFrame *tf)
 		else
 		{
 			printk("\033[1;31mUnhandled exception : #%d at 0x%x\n\033[0m", tf->irq, tf->eip);
-			print_tf(tf);
 			assert(0);
 		}
 	}
@@ -35,7 +34,9 @@ void irq_handle(TrapFrame *tf)
 		timer_event();
 		/* encounter time interrupt on user mode */
 		if(!forbid_switch && tf->cs == (0x18 | 0x3))
+		{
 			switch_thread(tf);
+		}
 	}
 	else if(tf->irq == 1001)
 	{

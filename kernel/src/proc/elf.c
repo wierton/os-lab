@@ -22,7 +22,14 @@ uint32_t load_elf(HANDLE hProc, char *path)
 
 	Elf32_Endr elf;
 	Elf32_Phdr ph[10];
-	fs_read(pinode, 0, sizeof(Elf32_Endr), &elf);
+	fs_read(pinode, 0, sizeof(Elf32_Endr), (void *)&elf);
+	if(elf.e_phentsize != sizeof(Elf32_Phdr))
+	{
+		printk("error:open_inode\n");
+		printk("inter no:%d\n", pinode->inodeno);
+		printk("file:%s, no:%d, pointer:%x\n", path, inodeno, pinode);
+		return 0;
+	}
 	assert(elf.e_phnum < 10 && elf.e_phentsize == sizeof(Elf32_Phdr));
 	fs_read(pinode, elf.e_phoff, elf.e_phnum * elf.e_phentsize, ph);
 

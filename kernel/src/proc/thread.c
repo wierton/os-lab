@@ -9,15 +9,34 @@
 #define Q_WAIT  1
 #define Q_BLOCK 2
 #define NR_TIMELOCK 16
+//#define DEBUG
+
+
+char *ask_queue[] = {"none", "wait", "block"};
+char *ask_ts[] = {"none", "run", "wait", "block"};
 
 int shell(TrapFrame *);
 static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 
 uint32_t cur_esp;
-uint32_t cur_thread = 0xffffffff, cur_proc;
+uint32_t cur_thread = 0xffffffff, cur_proc = 0xffffffff;
 uint32_t tmp_stack[4096];
 
 TIMELOCK timelock[NR_TIMELOCK];
+
+int debug_times = 0;
+int sleep_times = 0;
+
+void __attribute__((noinline)) debug()
+{
+	debug_times ++;
+	printk("\033[1;32mdebug start\n\033[0m");
+}
+
+void __attribute__((noinline)) double_debug()
+{
+	printk("\033[1;32mdouble debug start\n\033[0m");
+}
 
 /* function defined from here */
 
@@ -54,7 +73,7 @@ void show_queue(int id)
 	printk("%s chain(state, tid, ppid):", id ? "blocked" : "wait");
 	while(tmp != NULL)
 	{
-		printk("(%d, %d, %d) -- ", tmp->state, tmp->tid, tmp->ppid);
+		printk("(%s, %d, %d) -- ", ask_ts[tmp->state], tmp->tid, tmp->ppid);
 		tmp = tmp->next;
 	}
 	printk("\n");
@@ -104,6 +123,15 @@ void rm_queue(HANDLE hThread, uint32_t queue)
 	}
 }
 
+#ifdef DEBUG
+#define rm_queue(a, b) do { printk("%s,%d,%s(%d,%s):\n", __func__, __LINE__, "rm_queue", a, ask_queue[b]); \
+	show_queue(-1);show_queue(0);show_queue(1);\
+	rm_queue(a,b);\
+	show_queue(-1);show_queue(0);show_queue(1);\
+	printk("\n\n");\
+}while(0)
+#endif
+
 void add_queue(HANDLE hThread, uint32_t queue)
 {
 	TCB **ptar = NULL;
@@ -136,10 +164,10 @@ void add_queue(HANDLE hThread, uint32_t queue)
 	tcb[hThread].state = ts_tar;
 
 	/* add to tar queue */
-	if(*ptar == NULL)
+	if(*ptar == NULL || (*ptar)->tp > tcb[hThread].tp)
 	{
+		tcb[hThread].next = *ptar;
 		*ptar = &(tcb[hThread]);
-		tcb[hThread].next = NULL;
 	}
 	else
 	{
@@ -163,42 +191,25 @@ void add_run(HANDLE hThread)
 	cur_esp = tcb[hThread].kesp;
 	tcb[hThread].state = TS_RUN;
 
-	/* remove from wait queue */
-	TCB *tmp = tq_wait;
-	if(tmp->tid == hThread)
-	{
-		tq_wait = tq_wait->next;
-	}
-	else
-	{
-		while(tmp != NULL && tmp->next->tid != hThread)
-		{
-			tmp = tmp->next;
-		}
-
-		if(tmp)
-			tmp->next = tcb[hThread].next;
-	}
-
-	/* remove from blocked queue */
-	tmp = tq_blocked;
-	if(tmp->tid == hThread)
-	{
-		tq_blocked = tq_blocked->next;
-	}
-	else
-	{
-		while(tmp != NULL && tmp->next != &tcb[hThread])
-		{
-			tmp = tmp->next;
-		}
-
-		if(tmp)
-			tmp->next = tcb[hThread].next;
-	}
-
-	tcb[hThread].next = NULL;
+	rm_queue(hThread, Q_WAIT);
+	rm_queue(hThread, Q_BLOCK);
 }
+
+#ifdef DEBUG
+#define add_queue(a, b) do { printk("%s,%d,%s(%d,%s):\n", __func__, __LINE__, "add_queue", a, ask_queue[b]);\
+	show_queue(-1);show_queue(0);show_queue(1);\
+   	add_queue(a,b);\
+	show_queue(-1);show_queue(0);show_queue(1);\
+	printk("\n\n");\
+}while(0)
+
+#define add_run(a) do { printk("%s,%d,%s(%d):\n", __func__, __LINE__, "add_run", a);\
+	show_queue(-1);show_queue(0);show_queue(1);\
+	add_run(a);\
+	show_queue(-1);show_queue(0);show_queue(1);\
+	printk("\n\n");\
+}while(0)
+#endif
 
 void init_thread()
 {
@@ -261,7 +272,9 @@ void enter_thread(HANDLE hThread)
 	assert(hThread < NR_THREAD);
 
 	if(cur_thread != 0xffffffff && tcb[cur_thread].state == TS_RUN)
+	{
 		add_queue(cur_thread, Q_WAIT);
+	}
 
 	/* record current context information */
 	add_run(hThread);
@@ -331,10 +344,6 @@ void copy_thread_tree(HANDLE hSrc, HANDLE hDst)
 	}
 }
 
-void __attribute__((noinline)) debug()
-{
-	printk("\033[1;32mdebug start\n\033[0m");
-}
 
 void show_tf(TrapFrame *tf)
 {
@@ -342,6 +351,7 @@ void show_tf(TrapFrame *tf)
 	printk("eax:%x, ebx:%x, ecx:%x, edx:%x\n", tf->eax, tf->ebx, tf->ecx, tf->edx);
 	printk("esi:%x, edi:%x, ebp:%x, esp:%x\n", tf->esi, tf->edi, tf->ebp, tf->esp);
 }
+
 
 HANDLE switch_thread(TrapFrame *tf)
 {
@@ -357,21 +367,13 @@ HANDLE switch_thread(TrapFrame *tf)
 		if(tq_wait != NULL)
 		{
 			int tid = tq_wait->tid;
-			rm_queue(tid, Q_WAIT);
-			cur_thread = tid;
-			cur_proc = tcb[cur_thread].ppid;
+			add_run(tid);
 			memcpy(tf, &(tcb[cur_thread].tf), sizeof(TrapFrame));
-		}
-		else if(tq_blocked != NULL)
-		{
-			int tid = tq_blocked->tid;
-			rm_queue(tid, Q_BLOCK);
-			cur_thread = tid;
-			cur_proc = tcb[cur_thread].ppid;
-			memcpy(tf, &(tcb[cur_thread].tf), sizeof(TrapFrame));
+			load_udir(tcb[cur_thread].ppid);
+			return cur_thread;
 		}
 		else
-			shell(NULL);
+			assert(0);
 	}
 
 	uint32_t cur_tp = (uint32_t)TP_MIN;
@@ -390,7 +392,7 @@ HANDLE switch_thread(TrapFrame *tf)
 
 	/* no thread left */
 	if(tmp == NULL && tcb[cur_thread].state == TS_BLOCKED)
-		shell(NULL);
+		assert(0);
 
 	/* check for new thread which is prior to old thread */
 	while(tmp != NULL)
@@ -406,8 +408,9 @@ HANDLE switch_thread(TrapFrame *tf)
 	if(new_thread != cur_thread)
 	{
 		uint32_t old_thread = cur_thread;
-		if(tcb[cur_thread].state == TS_RUN)
-			add_queue(cur_thread, Q_WAIT);
+		/* switch_thread call by sleep will result in cur_state != TS_RUN */
+		if(tcb[old_thread].state == TS_RUN)
+			add_queue(old_thread, Q_WAIT);
 		add_run(new_thread);
 	
 		/* save TrapFrame information */
@@ -420,6 +423,13 @@ HANDLE switch_thread(TrapFrame *tf)
 	return new_thread;
 }
 
+#ifdef DEBUG
+#define switch_thread(a) do { printk("%s,%d:\n", __func__, __LINE__);\
+	void print_tf(TrapFrame *);\
+	switch_thread(a);\
+	print_tf(a);\
+}while(0)
+#endif
 
 int sleep(TrapFrame *tf)
 {
@@ -431,8 +441,15 @@ int sleep(TrapFrame *tf)
 
 	tcb[cur_thread].tartime = time() + tf->ebx;
 	add_queue(cur_thread, Q_BLOCK);
+	/* can't set cur_thread to 0xffffffff to avoid trapframe
+	 * crash in first part of switch_thread */
 	switch_thread(tf);
-	return 0;
+	/* if A call other syscall and interupted by B before saving
+	 * return value , then B call sleep, sleep call switch
+	 * thread and resume A's context, but after sleep return back
+	 * to do_syscall, do_syscall will update eax by the value
+	 * it got, so here wrote by tf->eax othrewise 0 */
+	return tf->eax;
 }
 
 int block(TrapFrame *tf, HANDLE hThread)
@@ -466,6 +483,15 @@ void destroy_thread(HANDLE hThread)
 	tcb[hThread].kesp = (uint32_t)(tcb[hThread].stack) + USER_KSTACK_SIZE;
 }
 
+void block_curt()
+{
+	if(cur_thread == 0xffffffff)
+		return;
+	add_queue(cur_thread, Q_WAIT);
+	cur_thread = 0xffffffff;
+	cur_proc = 0xffffffff;
+}
+
 int exit_thread(TrapFrame *tf)
 {
 	int i;
@@ -483,21 +509,16 @@ int exit_thread(TrapFrame *tf)
 
 		/* destroy process */
 		destroy_proc(ppid);
-		cur_thread = 0xffffffff;
-		shell(NULL);
+		cur_proc = 0xffffffff;
 	}
 	else
 	{
 		destroy_thread(ctid);
-		destroy_proc(ppid);
 	}
 
 	cur_thread = 0xffffffff;
-	show_queue(-1);
-	show_queue(0);
-	show_queue(1);
 	switch_thread(tf);
-	return 0;
+	return tf->eax;
 }
 
 int pthread_create(TrapFrame *tf)
@@ -520,6 +541,25 @@ int pthread_create(TrapFrame *tf)
 int pthread_join(TrapFrame *tf)
 {
 	return 0;
+}
+
+
+int ask(TrapFrame *tf)
+{
+	int i;
+	if(tcb[cur_thread].tp < 4)
+	{
+		return 0;	
+	}
+	for(i = 0; i < NR_THREAD; i++)
+	{
+		if(tcb[i].state != TS_UNALLOCED && tcb[i].tp < 4)
+		{
+			return -1;
+		}
+	}
+
+	return 1;
 }
 
 /* new syscall:

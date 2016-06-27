@@ -26,9 +26,9 @@ include kernel/Makefile.part
 # TESTCASE := fork
 # TESTCASE := fork_sleep
 # TESTCASE := exit
-# TESTCASE := thread
+TESTCASE := thread
 # TESTCASE := sem
-TESTCASE := fs
+# TESTCASE := fs
 
 include testcase/Makefile.part
 
@@ -53,7 +53,7 @@ $(IMG): $(format_BIN) $(boot_IMG) $(kernel_BIN) $(idle_BIN) $(test_BIN) $(game_B
 disk:$(IMG)
 
 debug: $(IMG)
-	$(QEMU) -S -s -serial stdio -d int -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
+	$(QEMU) -S -s -serial stdio -monitor telnet:127.0.0.1:1111,server,nowait $(IMG)
 
 gdb: $(IMG)
 	@gdb -ex "target remote 127.0.0.1:1234" -ex "symbol $(kernel_BIN)"
@@ -73,4 +73,5 @@ submit: clean
 	@cd .. && tar cvj $(shell pwd | grep -o '[^/]*$$') > 141242068.tar.bz2
 
 convert: $(IMG)
+	rm -rf $(IMG:.img=.vdi)
 	VBoxManage convertfromraw $(IMG) $(IMG:.img=.vdi)

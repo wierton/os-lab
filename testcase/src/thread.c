@@ -24,5 +24,6 @@ int main()
 
 	printf("main thread sleep.\n");
 	sleep(10);
+	printf("main thread exit.\n");
 	return 0;
 }
