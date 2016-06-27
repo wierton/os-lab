@@ -367,8 +367,9 @@ HANDLE switch_thread(TrapFrame *tf)
 	TCB *tmp = tq_wait;
 
 	/* no thread left */
+	int shell(TrapFrame *);
 	if(tmp == NULL && tcb[cur_thread].state == TS_BLOCKED)
-		poweroff();
+		shell(NULL);
 
 	/* check for new thread which is prior to old thread */
 	while(tmp != NULL)
@@ -473,9 +474,13 @@ int exit_thread(TrapFrame *tf)
 	{
 		block(tf, cur_thread);
 		destroy_thread(ctid, tf);
+		destroy_proc(ppid);
 	}
 
 	assert(tcb[cur_thread].state == TS_RUN);
+
+	int shell(TrapFrame *tf);
+	shell(NULL);
 	return 0;
 }
 

@@ -17,10 +17,11 @@ void keyboard_event(uint32_t code)
 	{
 		key_code = code;
 	}
+	extern int user_mode;
 	void update_buf(int ch);
 	void write_char(char ch);
 	void call_history(int ch);
-	if(key_code != 0xe0 && ((key_code & 0x80) == 0))
+	if(!user_mode && key_code != 0xe0 && ((key_code & 0x80) == 0))
 	{
 		write_char(switch_to_ascii(key_code));
 		update_buf(switch_to_ascii(key_code));

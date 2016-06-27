@@ -1,6 +1,8 @@
 #include "common.h"
 #include "x86/x86.h"
 
+int forbid_switch = 1;
+
 void timer_event();
 void keyboard_event(uint32_t);
 void do_syscall(TrapFrame *tf);
@@ -32,7 +34,7 @@ void irq_handle(TrapFrame *tf)
 	{
 		timer_event();
 		/* encounter time interrupt on user mode */
-		if(tf->cs == (0x18 | 0x3))
+		if(!forbid_switch && tf->cs == (0x18 | 0x3))
 			switch_thread(tf);
 	}
 	else if(tf->irq == 1001)

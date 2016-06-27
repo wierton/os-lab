@@ -22,8 +22,9 @@ void init_fs();
 void init_ufs();
 void init_console();
 void load_game();
-
 void init_cond();
+
+int shell(TrapFrame *tf);
 
 extern uint32_t _stack_end_;
 
@@ -56,11 +57,10 @@ void init_cond()
 	init_ufs();
 	init_console();
 
-	printk("Load Testcase!\n");
-
 	/* create idle process */
 	ProcAttr pa = {4};
 	create_proc("/idle", &pa);
+	shell(NULL);
 
 	ProcAttr gpa = {3};
 	create_proc("/game", &gpa);

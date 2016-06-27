@@ -4,6 +4,7 @@
 
 int main()
 {
+	/*
 	int w = 10, h = 10;
 	int x = SCR_W / 2, y = h;
 	int cx = 2, cy = 2;
@@ -17,5 +18,7 @@ int main()
 			cy = - cy;
 		invalidate();
 	}
+	*/
+	while(1) {asm volatile("int $0x20");}
 	return 0;
 }

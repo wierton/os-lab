@@ -3,6 +3,8 @@
 
 void abort(const char *file, int line);
 
+int shell(TrapFrame *tf);
+
 int sem_init(TrapFrame *tf);
 int sem_destroy(TrapFrame *tf);
 
