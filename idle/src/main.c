@@ -19,6 +19,6 @@ int main()
 		invalidate();
 	}
 	*/
-	while(1) {asm volatile("int $0x20");}
+	while(1) {asm volatile("movl $0x1a,%eax; int $0x80");}
 	return 0;
 }

@@ -215,6 +215,7 @@ void free_memspace(HANDLE hProcess)
 	int i, j, k;
 	/* free physical page */
 	struct PHYPAGE *tmp = phypage_full;
+	udir_dirty[hProcess] = false;
 	while(tmp != NULL)
 	{
 		struct PHYPAGE * wait_free = tmp;

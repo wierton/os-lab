@@ -10,10 +10,11 @@
 #define Q_BLOCK 2
 #define NR_TIMELOCK 16
 
+int shell(TrapFrame *);
 static TCB tcb[NR_THREAD], *tq_wait = NULL, *tq_blocked = NULL;
 
 uint32_t cur_esp;
-uint32_t cur_thread, cur_proc;
+uint32_t cur_thread = 0xffffffff, cur_proc;
 uint32_t tmp_stack[4096];
 
 TIMELOCK timelock[NR_TIMELOCK];
@@ -259,6 +260,9 @@ void enter_thread(HANDLE hThread)
 {
 	assert(hThread < NR_THREAD);
 
+	if(cur_thread != 0xffffffff && tcb[cur_thread].state == TS_RUN)
+		add_queue(cur_thread, Q_WAIT);
+
 	/* record current context information */
 	add_run(hThread);
 	
@@ -348,14 +352,32 @@ HANDLE switch_thread(TrapFrame *tf)
 	 *		memcpy(tf, new_thread.tf, sizeof(tf))
 	 * set cur_esp and cur_handle
 	 */
-
-	assert(cur_thread != 0xffffffff);
+	if(cur_thread == 0xffffffff)
+	{
+		if(tq_wait != NULL)
+		{
+			int tid = tq_wait->tid;
+			rm_queue(tid, Q_WAIT);
+			cur_thread = tid;
+			cur_proc = tcb[cur_thread].ppid;
+			memcpy(tf, &(tcb[cur_thread].tf), sizeof(TrapFrame));
+		}
+		else if(tq_blocked != NULL)
+		{
+			int tid = tq_blocked->tid;
+			rm_queue(tid, Q_BLOCK);
+			cur_thread = tid;
+			cur_proc = tcb[cur_thread].ppid;
+			memcpy(tf, &(tcb[cur_thread].tf), sizeof(TrapFrame));
+		}
+		else
+			shell(NULL);
+	}
 
 	uint32_t cur_tp = (uint32_t)TP_MIN;
 	HANDLE new_thread = cur_thread;
 
 	tcb[cur_thread].timescales ++;
-	memcpy(&(tcb[cur_thread].tf), tf, sizeof(TrapFrame));
 	pcb_time_plus(cur_proc);
 	cur_tp = tcb[cur_thread].tp;
 
@@ -367,7 +389,6 @@ HANDLE switch_thread(TrapFrame *tf)
 	TCB *tmp = tq_wait;
 
 	/* no thread left */
-	int shell(TrapFrame *);
 	if(tmp == NULL && tcb[cur_thread].state == TS_BLOCKED)
 		shell(NULL);
 
@@ -392,9 +413,9 @@ HANDLE switch_thread(TrapFrame *tf)
 		/* save TrapFrame information */
 		memcpy(&(tcb[old_thread].tf), tf, sizeof(TrapFrame));
 		memcpy(tf, &(tcb[new_thread].tf), sizeof(TrapFrame));
-
-		load_udir(tcb[new_thread].ppid);
 	}
+	
+	load_udir(tcb[new_thread].ppid);
 
 	return new_thread;
 }
@@ -429,13 +450,12 @@ int wakeup(TrapFrame *tf, HANDLE hThread)
 	return 0;
 }
 
-void destroy_thread(HANDLE hThread, TrapFrame *tf)
+void destroy_thread(HANDLE hThread)
 {
 	assert(hThread < NR_THREAD);
-	if(tcb[hThread].state != TS_BLOCKED)
-		add_queue(hThread, Q_BLOCK);
 
 	rm_queue(hThread, Q_BLOCK);
+	rm_queue(hThread, Q_WAIT);
 
 	tcb[hThread].ptid = -1;
 	tcb[hThread].ppid = -1;
@@ -458,29 +478,25 @@ int exit_thread(TrapFrame *tf)
 		for(i = 0; i < NR_THREAD; i++)
 		{
 			if(tcb[i].state != TS_UNALLOCED && tcb[i].ppid == ppid)
-			{
-				if(tcb[i].state == TS_RUN)
-				{
-					block(tf, i);
-				}
-				destroy_thread(i, tf);
-			}
+				destroy_thread(i);
 		}
 
 		/* destroy process */
 		destroy_proc(ppid);
+		cur_thread = 0xffffffff;
+		shell(NULL);
 	}
 	else
 	{
-		block(tf, cur_thread);
-		destroy_thread(ctid, tf);
+		destroy_thread(ctid);
 		destroy_proc(ppid);
 	}
 
-	assert(tcb[cur_thread].state == TS_RUN);
-
-	int shell(TrapFrame *tf);
-	shell(NULL);
+	cur_thread = 0xffffffff;
+	show_queue(-1);
+	show_queue(0);
+	show_queue(1);
+	switch_thread(tf);
 	return 0;
 }
 

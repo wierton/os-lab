@@ -125,7 +125,7 @@ int cmd_cat(char *args)
 	for(i = 0; i < pinode->filesz; i += 4096)
 	{
 		int sz = min(pinode->filesz - i, 4096);
-		fs_read(pinode, 0, sz, tbuf);
+		fs_read(pinode, i, sz, tbuf);
 		if(!re)
 			for(j = 0; j < sz; j++)
 				write_char(tbuf[j]);
@@ -168,6 +168,7 @@ int cmd_cd(char *args)
 				cur_path[i] = '\0';
 			else
 				break;
+		set_backst(strlen(cur_path) + 1);
 		return 0;
 	}
 	if(args[len - 1] != '/')
@@ -252,6 +253,7 @@ void command_helper(char *his)
 	char tmp[50];
 	strcpy(tmp, his);
 	char *args = strtok(tmp, ' ');
+
 	if(args == tmp)
 		args = NULL;
 	for(i = 0; i < NR_CMD; i++)
@@ -292,7 +294,7 @@ void update_buf(int ch)
 			history_head = head;
 			pos = 0;
 			/**/
-			command_helper(history[head - 1]);
+			command_helper(history[(head + 9) % 10]);
 		}
 		history_head = head;
 		pos = 0;

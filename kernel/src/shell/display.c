@@ -33,8 +33,9 @@ void overload()
 
 void write_char(char ch)
 {
+	static int color = 0xffffffff;
 	static int cx = 0, cy = 0;
-	draw_character(cbuf[cx][cy], cx * D_CHAR_W, cy * D_CHAR_W, 0xffffffff, TIMES);
+	draw_character(cbuf[cx][cy], cx * D_CHAR_W, cy * D_CHAR_W, color, TIMES);
 	switch(ch)
 	{
 		case '\0':return;
@@ -134,9 +135,9 @@ void init_console()
 int shell(TrapFrame *tf)
 {
 	extern int forbid_switch, user_mode;
-	asm volatile("sti");
 	user_mode = 0;
 	forbid_switch = 1;
+	asm volatile("sti");
 	printk("/>");
 	set_backst(2);
 	while(1)

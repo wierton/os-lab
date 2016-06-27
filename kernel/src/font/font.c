@@ -7,6 +7,26 @@
 #define CHAR_W 8
 #define CHAR_H 8
 
+static int bkcolor = 0x00000000;
+
+void set_bkcolor(int color)
+{
+	if(color != bkcolor)
+	{
+		int i, j;
+		int bpl = ((3 * SCR_W + 3) & ~3);
+		for(i = 0; i < SCR_W; i++)
+			for(j = 0; j < SCR_H; j++)
+			{
+				int pos = VMEM + 3 * i + j * bpl;
+				uint32_t *vmem = (uint32_t *)(pos);
+				if((vmem[0] & 0xffffff) == (bkcolor & 0xffffff))
+					vmem[0] = color;
+			}
+	}
+	bkcolor = color;
+}
+
 void draw_character(char ch, int x, int y, uint32_t color, uint8_t times)
 {
 	uint32_t i, j;
@@ -21,7 +41,7 @@ void draw_character(char ch, int x, int y, uint32_t color, uint8_t times)
 				vmem[0] = color;
 			}
 			else
-				vmem[0] = 0;
+				vmem[0] = bkcolor;
 		}
 
 }
