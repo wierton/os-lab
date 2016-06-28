@@ -448,7 +448,7 @@ int sleep(TrapFrame *tf)
 	 * return value , then B call sleep, sleep call switch
 	 * thread and resume A's context, but after sleep return back
 	 * to do_syscall, do_syscall will update eax by the value
-	 * it got, so here wrote by tf->eax othrewise 0 */
+	 * it got, so here wrote by tf->eax otherwise 0 */
 	return tf->eax;
 }
 
