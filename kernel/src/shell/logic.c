@@ -43,13 +43,16 @@ int cmd_echo(char *args)
 		printk("%s\n", args);
 	else
 	{
+		int off = 0;
 		uint32_t inode = creat(full_path(str));
 		if(inode == INVALID_INODENO)
 			return 0;
 		
 		INODE *pinode = open_inode(inode);
-		fs_write(pinode, 0, strlen(args), args);
-		pinode->filesz = strlen(args);
+		if(*(str - 2) == 0)
+			off = pinode->filesz;
+		fs_write(pinode, off, strlen(args), args);
+		pinode->filesz = off + strlen(args);
 		close_inode(pinode);
 	}
 	return 0;
@@ -109,13 +112,16 @@ int cmd_cat(char *args)
 	else
 		re = 1;
 
-	INODE *ptarinode;
+	int off = 0;
+	INODE *ptarinode = NULL;
 	if(re)
 	{
 		uint32_t tarinode = creat(full_path(str));
 		if(tarinode == INVALID_INODENO)
 			return 0;
 		ptarinode = open_inode(tarinode);
+		if(*(str - 2) == 0)
+			off = ptarinode->filesz;
 	}
 	uint32_t inode = opendir(full_path(args));
 	if(inode == INVALID_INODENO)
@@ -130,11 +136,11 @@ int cmd_cat(char *args)
 			for(j = 0; j < sz; j++)
 				write_char(tbuf[j]);
 		else
-			fs_write(ptarinode, i, sz, tbuf);
+			fs_write(ptarinode, off + i, sz, tbuf);
 	}
 	if(re)
 	{
-		ptarinode->filesz = pinode->filesz;
+		ptarinode->filesz = off + pinode->filesz;
 		close_inode(ptarinode);
 	}
 	close_inode(pinode);
