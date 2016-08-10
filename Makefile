@@ -1,7 +1,7 @@
 .PHNOY: count run clean boot game kernel idle lib submit gdb debug test disk convert
 
 CC := gcc-4.9 # this version is ok
-LD := ld
+LD := ld -m elf_i386
 QEMU := qemu-system-i386
 IMG := disk.img
 LIB_COMMON_DIR := libcommon/include

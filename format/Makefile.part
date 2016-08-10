@@ -5,7 +5,8 @@ format_BIN := obj/format/format
 
 $(format_BIN): $(format_CFILES)
 	@mkdir -p $(@D)
-	@gcc-4.9 -m32 -Wall -Werror -MMD -fno-builtin -fno-stack-protector $^ -o $@ -Iformat/include
+	@echo $^
+	@gcc-4.9 -Wall -Werror -MMD -fno-builtin $^ -o $@ -Iformat/include
 
 clean-format:
 	@rm -rf obj/format
